@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int           @id @default(autoincrement())
+  name         String
+  email        String        @unique
+  password     String
+  role         Role
+  skills       String?       // comma-separated skill tags
+  experience   String?
+  portfolioUrl String?
+  ratingsGiven Rating[]      @relation("RatingsGiven") // as reviewer
+  ratingsReceived Rating[]   @relation("RatingsReceived") // as target
+  proposals    Proposal[]
+  jobsPosted   Job[]         @relation("ClientJobs")
+  jobsAssigned Job[]         @relation("FreelancerJobs")
+  clientPayments     Payment[] @relation("ClientPayments")
+  freelancerPayments Payment[] @relation("FreelancerPayments")
+  createdAt    DateTime      @default(now())
+}
+
+model Job {
+  id             Int           @id @default(autoincrement())
+  title          String
+  description    String
+  budget         Float
+  status         JobStatus     @default(OPEN)
+  clientId       Int
+  freelancerId   Int?
+  proposals      Proposal[]
+  agreement      Agreement?
+  reviews        Rating[]      @relation("JobRatings")
+  filesSubmitted FileSubmission[]
+  payments       Payment[]
+  createdAt      DateTime      @default(now())
+
+  client         User          @relation("ClientJobs", fields: [clientId], references: [id])
+  freelancer     User?         @relation("FreelancerJobs", fields: [freelancerId], references: [id])
+}
+
+model Proposal {
+  id           Int       @id @default(autoincrement())
+  jobId        Int
+  freelancerId Int
+  coverLetter  String
+  bidAmount    Float
+  createdAt    DateTime  @default(now())
+
+  job          Job       @relation(fields: [jobId], references: [id])
+  freelancer   User      @relation(fields: [freelancerId], references: [id])
+}
+
+model Agreement {
+  id         Int      @id @default(autoincrement())
+  jobId      Int      @unique
+  hash       String   // Blockchain hash of agreement
+  createdAt  DateTime @default(now())
+
+  job        Job      @relation(fields: [jobId], references: [id])
+}
+
+model FileSubmission {
+  id         Int      @id @default(autoincrement())
+  jobId      Int
+  hash       String   // Hash stored on blockchain
+  fileUrl    String
+  createdAt  DateTime @default(now())
+
+  job        Job      @relation(fields: [jobId], references: [id])
+}
+
+model Rating {
+  id         Int      @id @default(autoincrement())
+  jobId      Int
+  reviewerId Int
+  userId     Int      // whom the rating is for
+  rating     Int
+  review     String
+  hash       String   // Blockchain hash
+  createdAt  DateTime @default(now())
+
+  job        Job      @relation("JobRatings", fields: [jobId], references: [id])
+  reviewer   User     @relation("RatingsGiven", fields: [reviewerId], references: [id])
+  user       User     @relation("RatingsReceived", fields: [userId], references: [id])
+}
+
+model Payment {
+  id           Int      @id @default(autoincrement())
+  jobId        Int
+  clientId     Int
+  freelancerId Int
+  amount       Float
+  status       PaymentStatus @default(PENDING)
+  createdAt    DateTime @default(now())
+
+  job          Job      @relation(fields: [jobId], references: [id])
+  client       User     @relation("ClientPayments", fields: [clientId], references: [id])
+  freelancer   User     @relation("FreelancerPayments", fields: [freelancerId], references: [id])
+}
+
+enum Role {
+  CLIENT
+  FREELANCER
+  ADMIN
+}
+
+enum JobStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}

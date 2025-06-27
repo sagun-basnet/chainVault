@@ -11,6 +11,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function Registration() {
   const [showPassword, setShowPassword] = useState(false);
@@ -383,12 +384,12 @@ export default function Registration() {
               <span className="text-gray-400 text-sm">
                 Already have an account?{" "}
               </span>
-              <a
-                href="#"
+              <Link
+                to="/login"
                 className="text-cyan-400 hover:text-cyan-300 transition-colors text-sm font-medium"
               >
                 Sign in here
-              </a>
+              </Link>
             </div>
           </div>
 

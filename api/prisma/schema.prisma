@@ -8,118 +8,93 @@ datasource db {
 }
 
 model User {
-  id           Int           @id @default(autoincrement())
-  name         String
-  email        String        @unique
-  password     String
-  role         Role
-  skills       String?       // comma-separated skill tags
-  experience   String?
-  portfolioUrl String?
-  ratingsGiven Rating[]      @relation("RatingsGiven") // as reviewer
-  ratingsReceived Rating[]   @relation("RatingsReceived") // as target
-  proposals    Proposal[]
-  jobsPosted   Job[]         @relation("ClientJobs")
-  jobsAssigned Job[]         @relation("FreelancerJobs")
-  clientPayments     Payment[] @relation("ClientPayments")
-  freelancerPayments Payment[] @relation("FreelancerPayments")
-  createdAt    DateTime      @default(now())
+  id             Int             @id @default(autoincrement())
+  name           String
+  email          String          @unique
+  password       String
+  role           Role            @default(USER)
+  files          File[]
+  sharedLinks    SharedLink[]
+  blockchainLogs BlockchainLog[]
+  createdAt      DateTime        @default(now())
 }
 
-model Job {
-  id             Int           @id @default(autoincrement())
-  title          String
-  description    String
-  budget         Float
-  status         JobStatus     @default(OPEN)
-  clientId       Int
-  freelancerId   Int?
-  proposals      Proposal[]
-  agreement      Agreement?
-  reviews        Rating[]      @relation("JobRatings")
-  filesSubmitted FileSubmission[]
-  payments       Payment[]
-  createdAt      DateTime      @default(now())
+model File {
+  id        Int      @id @default(autoincrement())
+  name      String
+  path      String
+  size      Int
+  type      String
+  category  String?
+  userId    Int
+  createdAt DateTime @default(now())
 
-  client         User          @relation("ClientJobs", fields: [clientId], references: [id])
-  freelancer     User?         @relation("FreelancerJobs", fields: [freelancerId], references: [id])
+  user           User            @relation(fields: [userId], references: [id])
+  tags           FileTag[]
+  sharedLinks    SharedLink[]
+  blockchainLogs BlockchainLog[]
 }
 
-model Proposal {
-  id           Int       @id @default(autoincrement())
-  jobId        Int
-  freelancerId Int
-  coverLetter  String
-  bidAmount    Float
-  createdAt    DateTime  @default(now())
-
-  job          Job       @relation(fields: [jobId], references: [id])
-  freelancer   User      @relation(fields: [freelancerId], references: [id])
+model Tag {
+  id    Int       @id @default(autoincrement())
+  name  String    @unique
+  files FileTag[]
 }
 
-model Agreement {
-  id         Int      @id @default(autoincrement())
-  jobId      Int      @unique
-  hash       String   // Blockchain hash of agreement
-  createdAt  DateTime @default(now())
+model FileTag {
+  id     Int @id @default(autoincrement())
+  fileId Int
+  tagId  Int
 
-  job        Job      @relation(fields: [jobId], references: [id])
+  file File @relation(fields: [fileId], references: [id])
+  tag  Tag  @relation(fields: [tagId], references: [id])
+
+  @@unique([fileId, tagId])
 }
 
-model FileSubmission {
-  id         Int      @id @default(autoincrement())
-  jobId      Int
-  hash       String   // Hash stored on blockchain
-  fileUrl    String
-  createdAt  DateTime @default(now())
+model SharedLink {
+  id         Int             @id @default(autoincrement())
+  fileId     Int
+  userId     Int
+  token      String          @unique
+  password   String?
+  permission SharePermission
+  expiresAt  DateTime?
+  createdAt  DateTime        @default(now())
 
-  job        Job      @relation(fields: [jobId], references: [id])
+  file            File           @relation(fields: [fileId], references: [id])
+  user            User           @relation(fields: [userId], references: [id])
+  blockchainLog   BlockchainLog? @relation(fields: [blockchainLogId], references: [id])
+  blockchainLogId Int?
 }
 
-model Rating {
-  id         Int      @id @default(autoincrement())
-  jobId      Int
-  reviewerId Int
-  userId     Int      // whom the rating is for
-  rating     Int
-  review     String
-  hash       String   // Blockchain hash
-  createdAt  DateTime @default(now())
+model BlockchainLog {
+  id        Int        @id @default(autoincrement())
+  fileId    Int
+  userId    Int
+  action    FileAction
+  hash      String
+  txHash    String?
+  timestamp DateTime   @default(now())
 
-  job        Job      @relation("JobRatings", fields: [jobId], references: [id])
-  reviewer   User     @relation("RatingsGiven", fields: [reviewerId], references: [id])
-  user       User     @relation("RatingsReceived", fields: [userId], references: [id])
-}
-
-model Payment {
-  id           Int      @id @default(autoincrement())
-  jobId        Int
-  clientId     Int
-  freelancerId Int
-  amount       Float
-  status       PaymentStatus @default(PENDING)
-  createdAt    DateTime @default(now())
-
-  job          Job      @relation(fields: [jobId], references: [id])
-  client       User     @relation("ClientPayments", fields: [clientId], references: [id])
-  freelancer   User     @relation("FreelancerPayments", fields: [freelancerId], references: [id])
+  file       File         @relation(fields: [fileId], references: [id])
+  user       User         @relation(fields: [userId], references: [id])
+  SharedLink SharedLink[]
 }
 
 enum Role {
-  CLIENT
-  FREELANCER
+  USER
   ADMIN
 }
 
-enum JobStatus {
-  OPEN
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
+enum SharePermission {
+  VIEW_ONLY
+  DOWNLOAD
 }
 
-enum PaymentStatus {
-  PENDING
-  COMPLETED
-  FAILED
+enum FileAction {
+  UPLOAD
+  DELETE
+  UPDATE
+  SHARE
 }

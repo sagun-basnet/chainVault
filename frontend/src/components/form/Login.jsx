@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, Lock, Mail, Brain, FileText, Shield } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -148,6 +149,16 @@ export default function Login() {
                 Secure Login
               </span>
             </button>
+            <div className="flex justify-center w-full">
+              <p className="text-gray-400 text-sm">Don't have an account? </p>
+              &nbsp;
+              <Link
+                to="/registration"
+                className="text-cyan-400 hover:text-cyan-300 transition-colors text-sm font-medium "
+              >
+                Free Register here
+              </Link>
+            </div>
           </div>
 
           {/* Security Badge */}

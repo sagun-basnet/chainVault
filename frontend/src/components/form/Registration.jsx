@@ -50,7 +50,7 @@ export default function Registration() {
     await post("/api/register", formData)
       .then((res) => {
         console.log("Submit register response: ", res);
-        toast.success(res.data.message);
+        toast.success(res.message);
         navigate(`/verify-otp?email=${formData.email}`);
       })
 

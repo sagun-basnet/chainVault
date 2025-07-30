@@ -11,14 +11,16 @@ import {
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { post } from "../../utils/api";
+import { toast } from "react-toastify";
 
 export default function Registration() {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
+    name: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -43,8 +45,18 @@ export default function Registration() {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     console.log("Registration attempt:", formData);
+    await post("/api/register", formData)
+      .then((res) => {
+        console.log("Submit register response: ", res);
+        toast.success(res.data.message);
+        navigate(`/verify-otp?email=${formData.email}`);
+      })
+
+      .catch((err) => {
+        console.log(err);
+      });
   };
 
   const getPasswordStrengthColor = () => {
@@ -107,66 +119,31 @@ export default function Registration() {
 
           {/* Registration Form */}
           <div className="space-y-6">
-            {/* Name Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* First Name */}
-              <div className="relative group">
-                <label
-                  htmlFor="firstName"
-                  className="block text-sm font-medium text-gray-300 mb-2"
-                >
-                  First Name
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-cyan-400 transition-colors" />
-                  <input
-                    type="text"
-                    id="firstName"
-                    value={formData.firstName}
-                    onChange={(e) =>
-                      handleInputChange("firstName", e.target.value)
-                    }
-                    onFocus={() => setFocusedField("firstName")}
-                    onBlur={() => setFocusedField("")}
-                    className={`w-full pl-12 pr-4 py-3 bg-gray-800/50 border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-all duration-300 ${
-                      focusedField === "firstName"
-                        ? "border-cyan-400 shadow-lg shadow-cyan-400/25 bg-gray-800/70"
-                        : "border-gray-600 hover:border-gray-500"
-                    }`}
-                    placeholder="Enter first name"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Last Name */}
-              <div className="relative group">
-                <label
-                  htmlFor="lastName"
-                  className="block text-sm font-medium text-gray-300 mb-2"
-                >
-                  Last Name
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-cyan-400 transition-colors" />
-                  <input
-                    type="text"
-                    id="lastName"
-                    value={formData.lastName}
-                    onChange={(e) =>
-                      handleInputChange("lastName", e.target.value)
-                    }
-                    onFocus={() => setFocusedField("lastName")}
-                    onBlur={() => setFocusedField("")}
-                    className={`w-full pl-12 pr-4 py-3 bg-gray-800/50 border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-all duration-300 ${
-                      focusedField === "lastName"
-                        ? "border-cyan-400 shadow-lg shadow-cyan-400/25 bg-gray-800/70"
-                        : "border-gray-600 hover:border-gray-500"
-                    }`}
-                    placeholder="Enter last name"
-                    required
-                  />
-                </div>
+            {/* First Name */}
+            <div className="relative group">
+              <label
+                htmlFor="firstName"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
+                Name
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-cyan-400 transition-colors" />
+                <input
+                  type="text"
+                  id="firstName"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
+                  onFocus={() => setFocusedField("firstName")}
+                  onBlur={() => setFocusedField("")}
+                  className={`w-full pl-12 pr-4 py-3 bg-gray-800/50 border rounded-lg text-white placeholder-gray-500 focus:outline-none transition-all duration-300 ${
+                    focusedField === "firstName"
+                      ? "border-cyan-400 shadow-lg shadow-cyan-400/25 bg-gray-800/70"
+                      : "border-gray-600 hover:border-gray-500"
+                  }`}
+                  placeholder="Enter first name"
+                  required
+                />
               </div>
             </div>
 

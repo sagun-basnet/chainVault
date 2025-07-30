@@ -1,16 +1,27 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { Eye, EyeOff, Lock, Mail, Brain, FileText, Shield } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { post } from "../../utils/api";
+import { toast } from "react-toastify";
+import { AuthContext } from "../../context/authContext";
 
 export default function Login() {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [focusedField, setFocusedField] = useState("");
+  const { login } = useContext(AuthContext);
 
-  const handleSubmit = () => {
-    console.log("Login attempt:", { email, password, rememberMe });
+  const handleSubmit = async () => {
+    const res = await login({ email, password });
+    if (res.message === "Login Successfully.") {
+      toast.success(res.message);
+      navigate("/dashboard");
+    } else {
+      toast.error("Login failed");
+    }
   };
 
   return (

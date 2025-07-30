@@ -82,6 +82,13 @@ model BlockchainLog {
   SharedLink SharedLink[]
 }
 
+model PasswordResetOtp {
+  id        Int      @id @default(autoincrement())
+  email     String
+  otp       String
+  expiresAt DateTime
+}
+
 enum Role {
   USER
   ADMIN

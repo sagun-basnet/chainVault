@@ -7,6 +7,7 @@ import HomePage from "./pages/HomePage";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import WatchDemoSection from "./components/home/WatchDemoSection";
 import ChainVaultDashboard from "./components/dashboard/ChainVaultDashboard";
+import VerifyOtp from "./pages/Verifyotp";
 
 function App() {
   const router = createBrowserRouter([
@@ -22,9 +23,14 @@ function App() {
       path: "/dashboard",
       element: <ChainVaultDashboard />,
     },
+
     {
       path: "/registration",
       element: <Registration />,
+    },
+    {
+      path: "/verify-otp",
+      element: <VerifyOtp />,
     },
     {
       path: "/login",

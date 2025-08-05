@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+
+# Environments
+env/
+venv/
+ENV/
+.venv/
+.env
+
+# Logs and outputs
+*.log
+*.out
+*.bak
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE/editor settings
+.vscode/
+.idea/
+
+# Pytesseract temp files
+tesseract-ocr/
+
+# Trained models
+*.joblib
+*.pkl
+
+# Data files
+*.csv
+*.xlsx
+*.json
+
+# Upload folders (if any)
+uploads/
+training_files/
+temp/
+
+# PDFs or other large test files
+*.pdf
+*.docx
+*.png
+*.jpg
+*.jpeg
+
+# Docker
+*.pid
+*.tar
+*.db
+*.sqlite
+
+# FastAPI static files (if generated)
+static/

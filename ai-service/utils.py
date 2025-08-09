@@ -6,6 +6,14 @@ import fitz  # PyMuPDF
 from PIL import Image
 import pytesseract
 import pandas as pd
+import cv2
+import numpy as np
+
+def preprocess_image(image_path):
+    img = cv2.imread(image_path)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)            # Convert to grayscale
+    _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)  # Binarize
+    return Image.fromarray(thresh)
 
 def get_file_extension(filename):
     return os.path.splitext(filename)[1].lower()
@@ -25,9 +33,11 @@ def extract_text_from_file(file_path):
 
     elif ext in [".jpg", ".jpeg", ".png"]:
         img = Image.open(file_path)
-        return pytesseract.image_to_string(img)
+        text = pytesseract.image_to_string(img)
+        # If OCR returns nothing, mark it specially
+        return text if text.strip() else "[[IMAGE_NO_TEXT]]"
 
-    elif ext in [".py", ".js", ".txt"]:
+    elif ext in [".py", ".js", ".jsx", ".ts", ".java", ".cpp", ".c", ".txt"]:
         with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
             return f.read()
 

@@ -19,6 +19,17 @@ def load_training_data():
             file_path = os.path.join(folder, filename)
             try:
                 content = extract_text_from_file(file_path)
+                ext = os.path.splitext(filename)[1].lower()
+                
+                if ext in [".jpg", ".jpeg", ".png"]:
+                    content = f"[IMAGE_FILE] {content}"
+                elif ext in [".csv", ".xlsx"]:
+                    content = f"[SPREADSHEET_FILE] {content}"
+                elif ext in [".py", ".js"]:
+                    content = f"[CODE_FILE] {content}"
+                else:
+                    content = f"[DOCUMENT_FILE] {content}"
+
                 if content.strip():
                     texts.append(content)
                     labels.append(category)

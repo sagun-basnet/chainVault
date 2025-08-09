@@ -26,24 +26,6 @@ async def upload_file(file: UploadFile = File(...)):
 
     try:
         text = extract_text_from_file(temp_path)
-        if not text.strip():
-            return {"error": "Empty or unreadable content"}
-        prediction = model.predict([text])[0]
-        return {"filename": file.filename, "category": prediction}
-    except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=500)
-
-
-@app.post("/classify/")
-async def classify_file(file: UploadFile = File(...)):
-    """Classify a single file without saving."""
-    temp_path = f"temp/{file.filename}"
-    contents = await file.read()
-    with open(temp_path, "wb") as f:
-        f.write(contents)
-
-    try:
-        text = extract_text_from_file(temp_path)
         if text.strip() == "[[IMAGE_NO_TEXT]]":
             prediction = "images"
         elif not text.strip():
@@ -52,7 +34,7 @@ async def classify_file(file: UploadFile = File(...)):
             prediction = model.predict([text])[0]
         return {"filename": file.filename, "category": prediction}
     except Exception as e:
-        return {"error": str(e)}
+        return JSONResponse(content={"error": str(e)}, status_code=500)
 
 
 @app.post("/upload-multiple/")
@@ -83,7 +65,6 @@ async def upload_multiple_files(files: List[UploadFile] = File(description="Mult
                 "filename": file.filename,
                 "category": prediction
             })
-
         except Exception as e:
             results.append({
                 "filename": file.filename,

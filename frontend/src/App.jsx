@@ -6,7 +6,7 @@ import Registration from "./components/form/Registration";
 import HomePage from "./pages/HomePage";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import WatchDemoSection from "./components/home/WatchDemoSection";
-import ChainVaultDashboard from "./components/dashboard/ChainVaultDashboard";
+import ChainVaultDashboard from "./components/dashboard/layout/ChainVaultDashboard";
 import VerifyOtp from "./pages/Verifyotp";
 import ProtectedRoute from "./utils/ProtectedRoute";
 

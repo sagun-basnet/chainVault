@@ -1,5 +1,4 @@
 # train_from_files.py
-
 import os
 import joblib
 from utils import extract_text_from_file

@@ -1,16 +1,17 @@
-import React from "react";
 import {
-  Shield,
-  Share2,
-  LogOut,
-  Home,
-  Folder,
   BarChart3,
   Database,
+  Folder,
+  Home,
+  LogOut,
+  Share2,
+  Shield,
   User,
 } from "lucide-react";
+import React, { useState } from "react";
 
-const Sidebar = ({ activeTab, setActiveTab }) => {
+const Sidebar = () => {
+  const [activeTab, setActiveTab] = useState("overview");
   const sidebarItems = [
     { id: "overview", icon: <Home className="w-5 h-5" />, label: "Overview" },
     { id: "files", icon: <Folder className="w-5 h-5" />, label: "Files" },
@@ -27,7 +28,6 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
     { id: "sharing", icon: <Share2 className="w-5 h-5" />, label: "Sharing" },
     { id: "security", icon: <Shield className="w-5 h-5" />, label: "Security" },
   ];
-
   return (
     <div className="fixed inset-y-0 left-0 z-50 w-64 bg-gray-900/80 backdrop-blur-xl border-r border-gray-800">
       <div className="flex flex-col h-full">

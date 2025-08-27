@@ -5,9 +5,11 @@ const prisma = new PrismaClient();
 // Create a new file
 export const createFile = async (req, res) => {
   const { name, path, size, type, category, userId, tags } = req.body;
+  console.log(name, path, size, type, category, userId, tags);
+
   try {
     // Basic validation
-    if (!name || !path || !size || !type || !userId) {
+    if (!name || !path || !size || !type) {
       return res.status(400).json({ message: "Missing required fields." });
     }
 
@@ -19,7 +21,7 @@ export const createFile = async (req, res) => {
         size,
         type,
         category,
-        userId,
+        userId: 1,
         tags:
           tags && tags.length > 0
             ? {

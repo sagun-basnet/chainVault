@@ -47,7 +47,7 @@ router.post("/upload-multiple", upload.array("files", 10), async (req, res) => {
       // Prepare full file data for DB, using AI category if available
       const fileData = {
         name: file.originalname,
-        path: `/images/${file.filename}`, // or file.path for full path, adjust as needed
+        path: `/uploads/${file.filename}`, // or file.path for full path, adjust as needed
         size: file.size,
         type: file.mimetype,
         category: aiResult?.category || category || "unknown", // AI category or fallback

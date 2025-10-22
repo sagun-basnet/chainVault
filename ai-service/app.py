@@ -15,6 +15,15 @@ os.makedirs("temp", exist_ok=True)
 app = FastAPI()
 model = joblib.load("models/classifier.pkl")
 
+@app.post("/retrain/")
+def retrain_model():
+    """Retrain AI model on updated training data."""
+    try:
+        from train_from_file import train_and_save_model
+        train_and_save_model()
+        return {"message": "✅ Model retrained successfully."}
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
 
 @app.post("/upload/")
 async def upload_file(file: UploadFile = File(...)):

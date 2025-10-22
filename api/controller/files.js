@@ -5,15 +5,11 @@ const prisma = new PrismaClient();
 // Create a new file
 export const createFile = async (req, res) => {
   const { name, path, size, type, category, userId, tags } = req.body;
-  console.log(name, path, size, type, category, userId, tags);
-
   try {
-    // Basic validation
     if (!name || !path || !size || !type) {
       return res.status(400).json({ message: "Missing required fields." });
     }
 
-    // Create file
     const file = await prisma.file.create({
       data: {
         name,
@@ -21,18 +17,28 @@ export const createFile = async (req, res) => {
         size,
         type,
         category,
-        userId: 1,
+        userId: 8,
         tags:
           tags && tags.length > 0
             ? {
-                create: tags.map((tagId) => ({
-                  tag: { connect: { id: tagId } },
+                create: tags.map((tagName) => ({
+                  tag: {
+                    connectOrCreate: {
+                      where: { name: tagName },
+                      create: { name: tagName },
+                    },
+                  },
                 })),
               }
             : undefined,
       },
-      include: { tags: { include: { tag: true } } },
+      include: {
+        tags: {
+          include: { tag: true },
+        },
+      },
     });
+
     res.status(201).json({ message: "File created successfully.", file });
   } catch (error) {
     console.error("Create file error:", error);

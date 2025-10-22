@@ -52,7 +52,7 @@ router.post("/upload-multiple", upload.array("files", 10), async (req, res) => {
         type: file.mimetype,
         category: aiResult?.category || category || "unknown", // AI category or fallback
         userId: Number(userId),
-        tags: tagArray,
+        tags: aiResult?.tags || tags || [],
       };
 
       // Call your controller function directly to save file info in DB
@@ -86,7 +86,9 @@ router.post("/upload-multiple", upload.array("files", 10), async (req, res) => {
     });
   } catch (error) {
     console.error("Error uploading files to AI and saving:", error);
-    res.status(500).json({ message: "Server error.", error: error.message });
+    res
+      .status(500)
+      .json({ message: `Server error. :${error}`, error: error.message });
   }
 });
 

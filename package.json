@@ -1,0 +1,12 @@
+{
+  "name": "chainvault",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start-all": "concurrently \"npm run dev --prefix api\" \"npm run dev --prefix frontend\" \"npm run ai-service\"",
+    "ai-service": "cd ai-service && venv\\Scripts\\activate && uvicorn app:app --reload"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

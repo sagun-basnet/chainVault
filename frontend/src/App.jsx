@@ -9,6 +9,13 @@ import WatchDemoSection from "./components/home/WatchDemoSection";
 import ChainVaultDashboard from "./components/dashboard/layout/ChainVaultDashboard";
 import VerifyOtp from "./pages/Verifyotp";
 import ProtectedRoute from "./utils/ProtectedRoute";
+import UserDashboard from "./components/dashboard/user/UserDashboard";
+import UserDashboardHomePage from "./components/user/pages/UserDashboardHomePage";
+import MyFilesPage from "./components/user/pages/MyFilesPage";
+import SharedFilesPage from "./components/user/pages/SharedFilesPage";
+import AIInsightsPage from "./components/user/pages/AIInsightsPage";
+import TagsPage from "./components/user/pages/TagsPage";
+import ProfilePage from "./components/user/pages/ProfilePage";
 
 function App() {
   const router = createBrowserRouter([
@@ -34,6 +41,42 @@ function App() {
       path: "/registration",
       element: <Registration />,
     },
+    {
+      element: <ProtectedRoute />,
+      children: [
+        {
+          path: "/user-dashboard",
+          element: <UserDashboard />,
+          children: [
+            {
+              path: "",
+              element: <UserDashboardHomePage />,
+            },
+            {
+              path: "/user-dashboard/files",
+              element: <MyFilesPage />,
+            },
+            {
+              path: "/user-dashboard/shared",
+              element: <SharedFilesPage />,
+            },
+            {
+              path: "/user-dashboard/insights",
+              element: <AIInsightsPage />,
+            },
+            {
+              path: "/user-dashboard/tags",
+              element: <TagsPage />,
+            },
+            {
+              path: "/user-dashboard/user-profile",
+              element: <ProfilePage />,
+            },
+          ]
+        },
+      ],
+    },
+
     {
       path: "/verify-otp",
       element: <VerifyOtp />,

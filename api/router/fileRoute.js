@@ -9,17 +9,21 @@ import {
   getFileById,
   updateFile,
   deleteFile,
+  getFileByUserId,
 } from "../controller/files.js";
 
 const router = express.Router();
 
 router.post("/upload-multiple", upload.array("files", 10), async (req, res) => {
   try {
+    console.log(req.files, 18);
+    console.log(req.body, 19);
+
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ message: "No files uploaded." });
     }
 
-    const { userId, category, tags } = req.body;
+    const { userId, tags } = req.body;
     const tagArray = tags ? JSON.parse(tags) : undefined;
 
     const results = [];
@@ -50,8 +54,8 @@ router.post("/upload-multiple", upload.array("files", 10), async (req, res) => {
         path: `/uploads/${file.filename}`, // or file.path for full path, adjust as needed
         size: file.size,
         type: file.mimetype,
-        category: aiResult?.category || category || "unknown", // AI category or fallback
-        userId: Number(userId),
+        category: aiResult?.category || "unknown", // AI category or fallback
+        userId: parseInt(userId),
         tags: aiResult?.tags || tags || [],
       };
 
@@ -95,6 +99,7 @@ router.post("/upload-multiple", upload.array("files", 10), async (req, res) => {
 // CRUD routes
 router.get("/", getFiles);
 router.get("/:id", getFileById);
+router.get("/user-id/:id", getFileByUserId);
 router.put("/:id", updateFile);
 router.delete("/:id", deleteFile);
 

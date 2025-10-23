@@ -117,3 +117,18 @@ export const deleteFile = async (req, res) => {
     res.status(500).json({ message: "Server error." });
   }
 };
+
+export const getFileByUserId = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const file = await prisma.file.findMany({
+      where: { userId: Number(id) },
+      include: { tags: { include: { tag: true } }, user: true },
+    });
+    if (!file) return res.status(404).json({ message: "File not found." });
+    res.status(200).json(file);
+  } catch (error) {
+    console.error("Get file by User ID error:", error);
+    res.status(500).json({ message: "Server error." });
+  }
+};

@@ -16,6 +16,7 @@ import SharedFilesPage from "./components/user/pages/SharedFilesPage";
 import AIInsightsPage from "./components/user/pages/AIInsightsPage";
 import TagsPage from "./components/user/pages/TagsPage";
 import ProfilePage from "./components/user/pages/ProfilePage";
+import AddFiles from "./components/user/components/AddFiles";
 
 function App() {
   const router = createBrowserRouter([
@@ -55,6 +56,10 @@ function App() {
             {
               path: "/user-dashboard/files",
               element: <MyFilesPage />,
+            },
+            {
+              path: "/user-dashboard/add-files",
+              element: <AddFiles />,
             },
             {
               path: "/user-dashboard/shared",

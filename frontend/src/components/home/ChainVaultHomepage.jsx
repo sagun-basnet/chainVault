@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   Shield,
   Brain,
@@ -21,10 +21,12 @@ import {
   Facebook,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { AuthContext } from "../../context/authContext";
 
 const ChainVaultHomepage = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const { currentUser } = useContext(AuthContext);
 
   useEffect(() => {
     setIsVisible(true);
@@ -163,11 +165,25 @@ const ChainVaultHomepage = () => {
             >
               Use Cases
             </a>
-            <Link to="/registration">
-              <button className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 px-6 py-2 rounded-lg font-medium transition-all transform hover:scale-105">
-                Get Started
-              </button>
-            </Link>
+            {currentUser.role === "USER" ? (
+              <Link to="/user-dashboard">
+                <button className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 px-6 py-2 rounded-lg font-medium transition-all transform hover:scale-105">
+                  Get Started
+                </button>
+              </Link>
+            ) : currentUser.role === "ADMIN" ? (
+              <Link to="/dashboard">
+                <button className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 px-6 py-2 rounded-lg font-medium transition-all transform hover:scale-105">
+                  Get Started
+                </button>
+              </Link>
+            ) : (
+              <Link to="/registration">
+                <button className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 px-6 py-2 rounded-lg font-medium transition-all transform hover:scale-105">
+                  Get Started
+                </button>
+              </Link>
+            )}
           </div>
         </div>
       </nav>

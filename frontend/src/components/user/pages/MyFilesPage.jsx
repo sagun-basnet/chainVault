@@ -12,84 +12,74 @@ import {
   FileSpreadsheet,
   MoreVertical,
   SquareTerminal,
+  Image,
+  X,
+  AlertTriangle,
 } from "lucide-react";
-import { useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { del, get, post } from "../../../utils/api";
+import { AuthContext } from "../../../context/authContext";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 const MyFilesPage = () => {
+  const { currentUser } = useContext(AuthContext);
+  const [files, setFiles] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [viewMode, setViewMode] = useState("list");
+  const [viewMode, setViewMode] = useState("grid");
   const [sortBy, setSortBy] = useState("name");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState(null);
 
-  const files = [
-    {
-      id: 1,
-      name: "Project_Proposal_v3.pdf",
-      category: "Documents",
-      size: "2.4 MB",
-      tags: ["important", "proposal"],
-      uploadedAt: "2025-10-20",
-      type: "PDF",
-    },
-    {
-      id: 2,
-      name: "Marketing_Assets.zip",
-      category: "Archive",
-      size: "45.2 MB",
-      tags: ["marketing", "assets"],
-      uploadedAt: "2025-10-19",
-      type: "Archive",
-    },
-    {
-      id: 3,
-      name: "Financial_Report_Q4.xlsx",
-      category: "Spreadsheet",
-      size: "1.8 MB",
-      tags: ["finance", "quarterly"],
-      uploadedAt: "2025-10-18",
-      type: "Spreadsheet",
-    },
-    {
-      id: 4,
-      name: "Team_Meeting_Notes.docx",
-      category: "Documents",
-      size: "856 KB",
-      tags: ["meeting", "notes"],
-      uploadedAt: "2025-10-17",
-      type: "Document",
-    },
-    {
-      id: 5,
-      name: "Brand_Guidelines.pdf",
-      category: "Documents",
-      size: "3.2 MB",
-      tags: ["branding", "guidelines"],
-      uploadedAt: "2025-10-16",
-      type: "PDF",
-    },
-    {
-      id: 6,
-      name: "Product_Card.jsx",
-      category: "Code",
-      size: "28.5 MB",
-      tags: ["images", "products"],
-      uploadedAt: "2025-10-15",
-      type: "Code",
-    },
-  ];
+  const fetchData = async () => {
+    await get(`/api/files/user-id/${parseInt(currentUser?.id)}`)
+      .then((res) => {
+        // setData(res);
+        // console.log("Fetched files data:", res);
+        const formatted = res.map((file) => ({
+          id: file.id,
+          name: file.name,
+          path: file.path,
+          size: (file.size / (1024 * 1024)).toFixed(2) + " MB", // size in MB
+          sizeInBytes: file.size, // Keep original size for sorting
+          type: file.type,
+          category: file.category,
+          createdAt: new Date(file.createdAt).toLocaleDateString(),
+          createdAtTimestamp: new Date(file.createdAt).getTime(), // For sorting
+          user: file.user
+            ? {
+                id: file.user.id,
+                name: file.user.name,
+                email: file.user.email,
+              }
+            : null,
+          tags: file.tags?.map((t) => t.tag?.name) || [], // extract tag names only
+        }));
+        // console.log(formatted, ":FORMATTED");
+        setFiles(formatted);
+      })
+      .catch((err) => {
+        console.error("Error fetching files data:", err);
+      });
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [currentUser?.id]);
 
   const getFileIcon = (type) => {
     switch (type) {
-      case "PDF":
-        return <FileText className="w-8 h-8 text-red-400" />;
+      case "images":
+        return <Image className="w-8 h-8 text-red-400" />;
       case "Archive":
         return <FileArchive className="w-8 h-8 text-yellow-400" />;
-      case "Spreadsheet":
+      case "spreadsheet":
         return <FileSpreadsheet className="w-8 h-8 text-green-400" />;
-      case "Document":
+      case "documents":
         return <File className="w-8 h-8 text-blue-400" />;
-      case "Code":
+      case "code":
         return <SquareTerminal className="w-8 h-8 text-purple-500" />;
       default:
         return <FileText className="w-8 h-8 text-gray-400" />;
@@ -106,6 +96,74 @@ const MyFilesPage = () => {
       selectedCategory === "all" || file.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  // Sorting functionality
+  const sortedFiles = [...filteredFiles].sort((a, b) => {
+    switch (sortBy) {
+      case "name":
+        return a.name.localeCompare(b.name);
+      case "date":
+        return b.createdAtTimestamp - a.createdAtTimestamp; // Newest first
+      case "size":
+        return b.sizeInBytes - a.sizeInBytes; // Largest first
+      default:
+        return 0;
+    }
+  });
+
+  const openDeleteModal = (file) => {
+    setFileToDelete(file);
+    setShowDeleteModal(true);
+  };
+
+  const closeDeleteModal = () => {
+    setShowDeleteModal(false);
+    setFileToDelete(null);
+  };
+
+  const handleDelete = async () => {
+    if (!fileToDelete) return;
+
+    await del(`/api/files/${parseInt(fileToDelete.id)}`)
+      .then((res) => {
+        console.log(res);
+        fetchData();
+        closeDeleteModal();
+        toast.success("File deleted successfully.");
+      })
+      .catch((err) => {
+        console.error("Error deleting file:", err);
+        closeDeleteModal();
+      });
+  };
+
+  // Download functionality
+  const handleDownload = async (file) => {
+    try {
+      // Make a request to backend with responseType: 'blob' for binary data
+      const response = await axios.get(
+        `http://localhost:5550/api/files/download/${file.id}/${currentUser?.id}`,
+        { responseType: "blob" } // 👈 important!
+      );
+
+      // Create a blob URL from response data
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+
+      // Create a temporary link element and trigger download
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = file.name; // downloaded file name
+      document.body.appendChild(link);
+      link.click();
+
+      // Cleanup
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading file:", error);
+      alert("Failed to download file. Please try again.");
+    }
+  };
 
   return (
     <div className="">
@@ -171,7 +229,7 @@ const MyFilesPage = () => {
 
         {/* Files Count */}
         <div className="flex items-center justify-between text-gray-400 text-sm">
-          <span>{filteredFiles.length} files</span>
+          <span>{sortedFiles.length} files</span>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
@@ -187,14 +245,14 @@ const MyFilesPage = () => {
         {viewMode === "grid" && (
           <div id="allfiles" className="h-[30rem] overflow-y-scroll">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 ">
-              {filteredFiles.map((file) => (
+              {sortedFiles.map((file) => (
                 <div
                   key={file.id}
                   className="bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-xl rounded-2xl border border-gray-800 p-4 hover:border-cyan-500/50 transition-all group"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="p-3 bg-gray-800/50 rounded-xl">
-                      {getFileIcon(file.type)}
+                      {getFileIcon(file.category)}
                     </div>
                     <button className="p-1 text-gray-400 hover:text-cyan-500 opacity-0 group-hover:opacity-100 transition-all">
                       <MoreVertical className="w-5 h-5" />
@@ -208,30 +266,39 @@ const MyFilesPage = () => {
                   </h3>
                   <div className="flex items-center justify-between text-sm text-gray-400 mb-3">
                     <span>{file.size}</span>
-                    <span className="text-xs">{file.uploadedAt}</span>
+                    <span className="text-xs">{file.createdAt}</span>
                   </div>
                   <div className="flex flex-wrap gap-1 mb-4">
-                    {file.tags.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="px-2 py-1 bg-cyan-500/20 text-cyan-400 text-xs rounded-full border border-cyan-500/30"
-                      >
-                        {tag}
-                      </span>
-                    ))}
+                    {file.tags.map(
+                      (tag, index) =>
+                        index <= 2 && (
+                          <span
+                            key={index}
+                            className="px-2 py-1 bg-cyan-500/20 text-cyan-400 text-xs rounded-full border border-cyan-500/30"
+                          >
+                            {tag}
+                          </span>
+                        )
+                    )}
                   </div>
                   <div className="flex items-center justify-between pt-3 border-t border-gray-700">
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs font-bold text-white">
                       {file.category}
                     </span>
                     <div className="flex items-center space-x-1">
                       <button className="p-2 text-gray-400 hover:text-cyan-500 hover:bg-gray-800/50 rounded-lg transition-all">
                         <Eye className="w-4 h-4" />
                       </button>
-                      <button className="p-2 text-gray-400 hover:text-cyan-500 hover:bg-gray-800/50 rounded-lg transition-all">
+                      <button
+                        onClick={() => handleDownload(file)}
+                        className="p-2 text-gray-400 hover:text-cyan-500 hover:bg-gray-800/50 rounded-lg transition-all"
+                      >
                         <Download className="w-4 h-4" />
                       </button>
-                      <button className="p-2 text-gray-400 hover:text-red-500 hover:bg-gray-800/50 rounded-lg transition-all">
+                      <button
+                        onClick={() => openDeleteModal(file)}
+                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-gray-800/50 rounded-lg transition-all"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                       <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-gray-800/50 rounded-lg transition-all">
@@ -273,14 +340,14 @@ const MyFilesPage = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-800">
-                  {filteredFiles.map((file) => (
+                  {sortedFiles.map((file) => (
                     <tr
                       key={file.id}
                       className="hover:bg-gray-800/30 transition-colors"
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-3">
-                          {getFileIcon(file.type)}
+                          {getFileIcon(file.category)}
                           <span className="text-white font-medium">
                             {file.name}
                           </span>
@@ -292,31 +359,40 @@ const MyFilesPage = () => {
                       <td className="px-6 py-4 text-gray-400">{file.size}</td>
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-1">
-                          {file.tags.map((tag, index) => (
-                            <span
-                              key={index}
-                              className="px-2 py-1 bg-cyan-500/20 text-cyan-400 text-xs rounded-full border border-cyan-500/30"
-                            >
-                              {tag}
-                            </span>
-                          ))}
+                          {file.tags.map(
+                            (tag, index) =>
+                              index <= 2 && (
+                                <span
+                                  key={index}
+                                  className="px-2 py-1 bg-cyan-500/20 text-cyan-400 text-xs rounded-full border border-cyan-500/30"
+                                >
+                                  {tag}
+                                </span>
+                              )
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-gray-400">
-                        {file.uploadedAt}
+                        {file.createdAt}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-2">
                           <button className="p-2 text-gray-400 hover:text-cyan-500 transition-colors">
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button className="p-2 text-gray-400 hover:text-cyan-500 transition-colors">
+                          <button
+                            onClick={() => handleDownload(file)}
+                            className="p-2 text-gray-400 hover:text-cyan-500 transition-colors"
+                          >
                             <Download className="w-4 h-4" />
                           </button>
                           <button className="p-2 text-gray-400 hover:text-cyan-500 transition-colors">
                             <Share2 className="w-4 h-4" />
                           </button>
-                          <button className="p-2 text-gray-400 hover:text-red-500 transition-colors">
+                          <button
+                            onClick={() => openDeleteModal(file)}
+                            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                          >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -329,6 +405,101 @@ const MyFilesPage = () => {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && fileToDelete && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl border border-gray-700 max-w-md w-full shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-700">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-red-500/20 rounded-lg">
+                  <AlertTriangle className="w-6 h-6 text-red-500" />
+                </div>
+                <h2 className="text-xl font-bold text-white">Delete File</h2>
+              </div>
+              <button
+                onClick={closeDeleteModal}
+                className="p-1 text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              <p className="text-gray-300">
+                Are you sure you want to delete this file? This action cannot be
+                undone.
+              </p>
+
+              {/* File Details */}
+              <div className="bg-gray-800/50 rounded-lg p-4 space-y-3 border border-gray-700">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-gray-800 rounded-lg">
+                    {getFileIcon(fileToDelete.category)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-white font-medium truncate">
+                      {fileToDelete.name}
+                    </h3>
+                    <p className="text-sm text-gray-400">
+                      {fileToDelete.category}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-700">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Size</p>
+                    <p className="text-sm text-gray-300 font-medium">
+                      {fileToDelete.size}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Uploaded</p>
+                    <p className="text-sm text-gray-300 font-medium">
+                      {fileToDelete.createdAt}
+                    </p>
+                  </div>
+                </div>
+
+                {fileToDelete.tags.length > 0 && (
+                  <div className="pt-3 border-t border-gray-700">
+                    <p className="text-xs text-gray-500 mb-2">Tags</p>
+                    <div className="flex flex-wrap gap-1">
+                      {fileToDelete.tags.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="px-2 py-1 bg-cyan-500/20 text-cyan-400 text-xs rounded-full border border-cyan-500/30"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-700">
+              <button
+                onClick={closeDeleteModal}
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg font-medium transition-all shadow-lg shadow-red-500/20"
+              >
+                Delete File
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -10,6 +10,7 @@ import {
   updateFile,
   deleteFile,
   getFileByUserId,
+  downloadFileById,
 } from "../controller/files.js";
 
 const router = express.Router();
@@ -102,5 +103,6 @@ router.get("/:id", getFileById);
 router.get("/user-id/:id", getFileByUserId);
 router.put("/:id", updateFile);
 router.delete("/:id", deleteFile);
+router.get("/download/:id/:uid", downloadFileById);
 
 export default router;

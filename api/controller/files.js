@@ -1,4 +1,6 @@
 import { PrismaClient } from "@prisma/client";
+import path from "path";
+import fs from "fs";
 
 const prisma = new PrismaClient();
 
@@ -17,11 +19,11 @@ export const createFile = async (req, res) => {
         size,
         type,
         category,
-        userId: 8,
+        userId: userId,
         tags:
           tags && tags.length > 0
             ? {
-                create: tags.map((tagName) => ({
+                create: tags?.map((tagName) => ({
                   tag: {
                     connectOrCreate: {
                       where: { name: tagName },
@@ -130,5 +132,38 @@ export const getFileByUserId = async (req, res) => {
   } catch (error) {
     console.error("Get file by User ID error:", error);
     res.status(500).json({ message: "Server error." });
+  }
+};
+
+export const downloadFileById = async (req, res) => {
+  try {
+    const fileId = parseInt(req.params.id);
+    const userId = parseInt(req.params.uid);
+
+    // Fetch file
+    const file = await prisma.file.findUnique({
+      where: { id: fileId },
+      include: { user: true },
+    });
+
+    if (!file) return res.status(404).json({ message: "File not found" });
+
+    // Check permission
+    if (file.userId !== userId) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const filePath = path.resolve(`./public/${file.path}`); // ✅ relative path
+
+    // Check file existence
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: "File not found on server" });
+    }
+
+    // Set headers and send file
+    res.download(filePath, file.name); // ✅ simpler and safer
+  } catch (error) {
+    console.error("Download error:", error);
+    res.status(500).json({ message: "Error downloading file" });
   }
 };

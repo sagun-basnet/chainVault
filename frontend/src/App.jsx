@@ -17,6 +17,7 @@ import AIInsightsPage from "./components/user/pages/AIInsightsPage";
 import TagsPage from "./components/user/pages/TagsPage";
 import ProfilePage from "./components/user/pages/ProfilePage";
 import AddFiles from "./components/user/components/AddFiles";
+import ShareFileViewer from "./components/user/components/ShareFileViewer";
 
 function App() {
   const router = createBrowserRouter([
@@ -77,11 +78,14 @@ function App() {
               path: "/user-dashboard/user-profile",
               element: <ProfilePage />,
             },
-          ]
+          ],
         },
       ],
     },
-
+    {
+      path: "/shared-file",
+      element: <ShareFileViewer />,
+    },
     {
       path: "/verify-otp",
       element: <VerifyOtp />,

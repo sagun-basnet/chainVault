@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   Download,
   Eye,
@@ -14,13 +15,13 @@ import {
   Loader,
   ZoomIn,
   ZoomOut,
-  Share2,
 } from "lucide-react";
-import { useState } from "react";
+import { useParams } from "react-router-dom";
 import { get, post } from "../../../utils/api";
 
-const ShareFileViewer = () => {
-  const [urlInput, setUrlInput] = useState("");
+const ShareFileLink = () => {
+  const { token } = useParams();
+
   const [password, setPassword] = useState("");
   const [showPasswordInput, setShowPasswordInput] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -32,19 +33,7 @@ const ShareFileViewer = () => {
   const [error, setError] = useState(null);
   const [accessGranted, setAccessGranted] = useState(false);
   const [zoom, setZoom] = useState(100);
-  const [extractedToken, setExtractedToken] = useState(null);
   const [isPasswordProtected, setIsPasswordProtected] = useState(false);
-
-  const extractTokenFromUrl = (url) => {
-    try {
-      const urlObj = new URL(url);
-      const pathParts = urlObj.pathname.split("/");
-      const token = pathParts[pathParts.length - 1];
-      return token || null;
-    } catch (err) {
-      return null;
-    }
-  };
 
   const getFileIcon = (type) => {
     switch (type) {
@@ -75,22 +64,28 @@ const ShareFileViewer = () => {
     return new Date(dateString).toLocaleDateString();
   };
 
-  const fetchSharedFile = async (token, pwd = null) => {
+  useEffect(() => {
+    if (token) {
+      fetchSharedFile();
+    }
+  }, [token]);
+
+  const fetchSharedFile = async (pwd = "") => {
     setIsLoading(true);
     setError(null);
 
     try {
       const response = await get(
-        `/api/files/get-share/${token}?password=${pwd}`
+        `/api/files/get-share/${token}?password=${[pwd]}`
       );
 
       if (response.file && response.owner) {
+        console.log(response);
         setFileData(response.file);
         setOwnerData(response.owner);
         setPermission(response.permission);
         setAccessGranted(true);
         setShowPasswordInput(false);
-        setIsPasswordProtected(false);
         await loadFilePreview(response.file);
       }
     } catch (err) {
@@ -106,7 +101,7 @@ const ShareFileViewer = () => {
       } else if (err.response?.status === 403) {
         setError("Access denied. The link may have expired or been revoked.");
       } else if (err.response?.status === 404) {
-        setError("File not found. The link may be invalid or deleted");
+        setError("File not found. The link may be invalid or deleted.");
       } else {
         setError("Failed to access file. Please try again.");
       }
@@ -116,28 +111,12 @@ const ShareFileViewer = () => {
   };
 
   const handleAccessFile = async () => {
-    if (!urlInput.trim()) {
-      setError("Please enter a share URL");
+    if (isPasswordProtected && !password) {
+      setError("Please enter the password");
       return;
     }
 
-    const token = extractTokenFromUrl(urlInput);
-    if (!token) {
-      setError("Invalid share URL format");
-      return;
-    }
-
-    setExtractedToken(token);
-
-    if (showPasswordInput && isPasswordProtected) {
-      if (!password) {
-        setError("Please enter the password");
-        return;
-      }
-      await fetchSharedFile(token, password);
-    } else {
-      await fetchSharedFile(token);
-    }
+    await fetchSharedFile(password);
   };
 
   const loadFilePreview = async (file) => {
@@ -146,6 +125,7 @@ const ShareFileViewer = () => {
     try {
       const fileExtension = file.name.split(".").pop().toLowerCase();
       const fileUrl = `http://localhost:5550${file.path}`;
+      console.log(fileUrl, "FILEURL");
 
       if (
         ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg"].includes(
@@ -336,66 +316,57 @@ const ShareFileViewer = () => {
     }
   };
 
+  if (!token) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <AlertTriangle className="w-16 h-16 text-red-400 mx-auto" />
+          <h1 className="text-2xl font-bold text-white">Invalid Link</h1>
+          <p className="text-gray-400">The share link is invalid or missing.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-gradient-to-br">
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
       <div className="max-w-6xl mx-auto px-4 py-8">
-        {!accessGranted ? (
+        {!accessGranted && showPasswordInput ? (
           <div className="flex items-center justify-center min-h-[80vh]">
-            <div className="w-full max-w-2xl">
+            <div className="w-full max-w-md">
               <div className="text-center mb-8">
                 <div className="flex justify-center mb-4">
                   <div className="p-4 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-2xl">
-                    <Share2 className="w-12 h-12 text-cyan-400" />
+                    <Lock className="w-12 h-12 text-cyan-400" />
                   </div>
                 </div>
                 <h1 className="text-4xl font-bold text-white mb-2">
-                  Access Shared File
+                  Password Required
                 </h1>
                 <p className="text-gray-400">
-                  Enter the share URL to view the file
+                  This file is protected. Enter the password to continue.
                 </p>
               </div>
 
               <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-xl rounded-2xl border border-gray-800 p-8 shadow-2xl">
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Share URL
+                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-300 mb-2">
+                      <Lock className="w-4 h-4" />
+                      <span>Password</span>
                     </label>
                     <input
-                      type="text"
-                      value={urlInput}
-                      onChange={(e) => setUrlInput(e.target.value)}
-                      placeholder="https://yourapp.com/share/abc123..."
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter password"
                       className="w-full px-4 py-3 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:border-cyan-500 focus:outline-none transition-all placeholder-gray-500"
                       onKeyPress={(e) =>
                         e.key === "Enter" && handleAccessFile()
                       }
+                      autoFocus
                     />
                   </div>
-
-                  {showPasswordInput && (
-                    <div>
-                      <label className="flex items-center space-x-2 text-sm font-medium text-gray-300 mb-2">
-                        <Lock className="w-4 h-4" />
-                        <span>Password</span>
-                      </label>
-                      <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Enter password"
-                        className="w-full px-4 py-3 bg-gray-800/50 text-white rounded-lg border border-gray-700 focus:border-cyan-500 focus:outline-none transition-all placeholder-gray-500"
-                        onKeyPress={(e) =>
-                          e.key === "Enter" && handleAccessFile()
-                        }
-                        autoFocus
-                      />
-                      <p className="text-sm text-gray-400 mt-2">
-                        This file is password protected
-                      </p>
-                    </div>
-                  )}
 
                   {error && (
                     <div className="flex items-center space-x-2 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
@@ -406,13 +377,13 @@ const ShareFileViewer = () => {
 
                   <button
                     onClick={handleAccessFile}
-                    disabled={isLoading}
+                    disabled={isLoading || !password}
                     className="w-full px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white rounded-lg font-medium transition-all shadow-lg shadow-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                   >
                     {isLoading ? (
                       <>
                         <Loader className="w-5 h-5 animate-spin" />
-                        <span>Accessing...</span>
+                        <span>Verifying...</span>
                       </>
                     ) : (
                       <>
@@ -426,9 +397,8 @@ const ShareFileViewer = () => {
                     <div className="flex items-start space-x-3 text-sm text-gray-400">
                       <Shield className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
                       <p>
-                        Your access is secure and temporary. Files are shared
-                        with specific permissions and may expire after a set
-                        time.
+                        Your access is secure and temporary. The password was
+                        provided by the person who shared this file with you.
                       </p>
                     </div>
                   </div>
@@ -436,7 +406,24 @@ const ShareFileViewer = () => {
               </div>
             </div>
           </div>
-        ) : (
+        ) : !accessGranted && isLoading ? (
+          <div className="flex items-center justify-center min-h-[80vh]">
+            <div className="text-center space-y-4">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-cyan-500 mx-auto"></div>
+              <p className="text-gray-400 text-lg">Loading shared file...</p>
+            </div>
+          </div>
+        ) : !accessGranted && error ? (
+          <div className="flex items-center justify-center min-h-[80vh]">
+            <div className="text-center space-y-4 max-w-md">
+              <div className="p-4 bg-red-500/20 rounded-full w-fit mx-auto">
+                <AlertTriangle className="w-16 h-16 text-red-400" />
+              </div>
+              <h1 className="text-2xl font-bold text-white">Access Denied</h1>
+              <p className="text-gray-400">{error}</p>
+            </div>
+          </div>
+        ) : accessGranted && fileData ? (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
@@ -454,16 +441,13 @@ const ShareFileViewer = () => {
                   setOwnerData(null);
                   setPermission(null);
                   setFileContent(null);
-                  setUrlInput("");
                   setPassword("");
                   setError(null);
                   setShowPasswordInput(false);
-                  setIsPasswordProtected(false);
-                  setExtractedToken(null);
                 }}
                 className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg font-medium transition-all"
               >
-                New URL
+                Exit
               </button>
             </div>
 
@@ -471,21 +455,21 @@ const ShareFileViewer = () => {
               <div className="flex items-start justify-between flex-wrap gap-4">
                 <div className="flex items-start space-x-4">
                   <div className="p-3 bg-gray-800/50 rounded-xl">
-                    {getFileIcon(fileData?.category)}
+                    {getFileIcon(fileData.category)}
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold text-white mb-1">
-                      {fileData?.name}
+                      {fileData.name}
                     </h2>
                     <p className="text-gray-400 mb-3">
                       Shared by {ownerData?.name || "Unknown"}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <span className="px-3 py-1 bg-cyan-500/20 text-cyan-400 text-xs rounded-full border border-cyan-500/30">
-                        {fileData?.category}
+                        {fileData.category}
                       </span>
                       <span className="px-3 py-1 bg-blue-500/20 text-blue-400 text-xs rounded-full border border-blue-500/30">
-                        {fileData?.type}
+                        {fileData.type}
                       </span>
                     </div>
                   </div>
@@ -508,7 +492,7 @@ const ShareFileViewer = () => {
                     <span className="text-sm">Size</span>
                   </div>
                   <p className="text-white font-medium">
-                    {formatFileSize(fileData?.size)}
+                    {formatFileSize(fileData.size)}
                   </p>
                 </div>
                 <div>
@@ -526,7 +510,7 @@ const ShareFileViewer = () => {
                     <span className="text-sm">Created</span>
                   </div>
                   <p className="text-white font-medium">
-                    {formatDate(fileData?.createdAt)}
+                    {formatDate(fileData.createdAt)}
                   </p>
                 </div>
               </div>
@@ -537,10 +521,10 @@ const ShareFileViewer = () => {
               {renderFileContent()}
             </div>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
 };
 
-export default ShareFileViewer;
+export default ShareFileLink;

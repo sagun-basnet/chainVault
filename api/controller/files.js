@@ -111,6 +111,8 @@ export const updateFile = async (req, res) => {
 // Delete a file
 export const deleteFile = async (req, res) => {
   const { id } = req.params;
+  console.log(id);
+
   try {
     await prisma.file.delete({ where: { id: Number(id) } });
     res.status(200).json({ message: "File deleted successfully." });

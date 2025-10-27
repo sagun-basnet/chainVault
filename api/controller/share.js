@@ -37,7 +37,7 @@ export const createShareLink = async (req, res) => {
 export const accessSharedFile = async (req, res) => {
   try {
     const { token } = req.params;
-    const { password } = req.body; // optional password input
+    const password = req.query.password; // optional password input
 
     const link = await prisma.sharedLink.findUnique({
       where: { token },

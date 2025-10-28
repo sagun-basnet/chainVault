@@ -8,13 +8,18 @@ import {
   Download,
   Link as LinkIcon,
   Copy,
-  Link,
+  X,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  Maximize2,
 } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../../context/AuthContext";
 import { get, post } from "../../../utils/api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const SharedFilesPage = () => {
   const { currentUser } = useContext(AuthContext);
@@ -22,6 +27,12 @@ const SharedFilesPage = () => {
   const [sortBy, setSortBy] = useState("sharedAt");
   const [sortOrder, setSortOrder] = useState("desc");
   const [sharedFiles, setSharedFiles] = useState([]);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [fileToView, setFileToView] = useState(null);
+  const [fileContent, setFileContent] = useState(null);
+  const [isLoadingFile, setIsLoadingFile] = useState(false);
+  const [zoom, setZoom] = useState(100);
+  const [rotation, setRotation] = useState(0);
 
   const fetchData = async () => {
     await get(`api/files/get-share-file-list/${currentUser.id}`)
@@ -129,12 +140,91 @@ const SharedFilesPage = () => {
   const handleCopyLink = (token, fileName) => {
     const shareLink = `${window.location.origin}/share/${token}`;
     navigator.clipboard.writeText(shareLink);
-    // alert(`Link copied for ${fileName}!`);
     toast.success(`Share link copied for ${fileName}!`);
   };
 
-  const sortedFiles = sortFiles(sharedFiles);
+  const handleView = async (file) => {
+    setFileToView(file);
+    setShowViewModal(true);
+    setIsLoadingFile(true);
+    setZoom(100);
+    setRotation(0);
 
+    try {
+      const response = await axios.get(
+        `http://localhost:5550/api/files/download/${file.id}/${currentUser?.id}`,
+        { responseType: "blob" }
+      );
+
+      const blob = response.data;
+      const fileExtension = file.name.split(".").pop().toLowerCase();
+
+      if (
+        ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg"].includes(
+          fileExtension
+        )
+      ) {
+        const url = window.URL.createObjectURL(blob);
+        setFileContent({ type: "image", url });
+      } else if (["pdf"].includes(fileExtension)) {
+        const url = window.URL.createObjectURL(blob);
+        setFileContent({ type: "pdf", url });
+      } else if (
+        [
+          "txt",
+          "js",
+          "jsx",
+          "ts",
+          "tsx",
+          "html",
+          "css",
+          "json",
+          "xml",
+          "md",
+          "py",
+          "java",
+          "c",
+          "cpp",
+          "cs",
+        ].includes(fileExtension)
+      ) {
+        const text = await blob.text();
+        setFileContent({
+          type: "text",
+          content: text,
+          extension: fileExtension,
+        });
+      } else if (["mp4", "webm", "ogg"].includes(fileExtension)) {
+        const url = window.URL.createObjectURL(blob);
+        setFileContent({ type: "video", url });
+      } else if (["mp3", "wav", "ogg", "m4a"].includes(fileExtension)) {
+        const url = window.URL.createObjectURL(blob);
+        setFileContent({ type: "audio", url });
+      } else {
+        setFileContent({ type: "unsupported" });
+      }
+    } catch (error) {
+      console.error("Error loading file:", error);
+      toast.error("Failed to load file preview.");
+      setFileContent({ type: "error" });
+    } finally {
+      setIsLoadingFile(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowViewModal(false);
+    setFileToView(null);
+    setFileContent(null);
+    setZoom(100);
+    setRotation(0);
+  };
+
+  const handleZoomIn = () => setZoom((prev) => Math.min(prev + 25, 200));
+  const handleZoomOut = () => setZoom((prev) => Math.max(prev - 25, 50));
+  const handleRotate = () => setRotation((prev) => (prev + 90) % 360);
+
+  const sortedFiles = sortFiles(sharedFiles);
   const navigate = useNavigate();
 
   return (
@@ -247,9 +337,6 @@ const SharedFilesPage = () => {
                     <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">
                       Permission
                     </th>
-                    {/* <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">
-                      Views
-                    </th> */}
                     <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">
                       Shared Date
                     </th>
@@ -293,9 +380,6 @@ const SharedFilesPage = () => {
                           {getPermissionLabel(shareData.permission)}
                         </span>
                       </td>
-                      {/* <td className="px-6 py-4 text-gray-400">
-                        {shareData.views || 0}
-                      </td> */}
                       <td className="px-6 py-4 text-gray-400">
                         {formatDate(shareData.createdAt)}
                       </td>
@@ -317,20 +401,11 @@ const SharedFilesPage = () => {
                             <Copy className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => alert(`View ${shareData.file.name}`)}
+                            onClick={() => handleView(shareData.file)}
                             className="p-2 text-gray-400 hover:text-blue-500 transition-colors"
                             title="View File"
                           >
                             <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() =>
-                              alert(`Download ${shareData.file.name}`)
-                            }
-                            className="p-2 text-gray-400 hover:text-green-500 transition-colors"
-                            title="Download"
-                          >
-                            <Download className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteShare(shareData.id)}
@@ -392,12 +467,6 @@ const SharedFilesPage = () => {
                       {formatFileSize(shareData.file.size)}
                     </span>
                   </div>
-                  {/* <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">Views:</span>
-                    <span className="text-gray-300">
-                      {shareData.views || 0}
-                    </span>
-                  </div> */}
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-400">Shared:</span>
                     <span className="text-gray-300">
@@ -431,18 +500,11 @@ const SharedFilesPage = () => {
                     <span>Copy Link</span>
                   </button>
                   <button
-                    onClick={() => alert(`View ${shareData.file.name}`)}
+                    onClick={() => handleView(shareData.file)}
                     className="p-2 bg-gray-800/50 hover:bg-blue-500/20 text-gray-300 hover:text-blue-400 rounded-lg transition-all"
                     title="View File"
                   >
                     <Eye className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => alert(`Download ${shareData.file.name}`)}
-                    className="p-2 bg-gray-800/50 hover:bg-green-500/20 text-gray-300 hover:text-green-400 rounded-lg transition-all"
-                    title="Download"
-                  >
-                    <Download className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDeleteShare(shareData.id)}
@@ -457,6 +519,146 @@ const SharedFilesPage = () => {
           </div>
         )}
       </div>
+
+      {/* File View Modal */}
+      {showViewModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl border border-gray-700 w-full max-w-6xl max-h-[90vh] flex flex-col shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-700">
+              <div className="flex items-center space-x-3">
+                <FileText className={`w-6 h-6 ${getFileIcon(fileToView?.name || '')}`} />
+                <div>
+                  <h2 className="text-xl font-semibold text-white">
+                    {fileToView?.name}
+                  </h2>
+                  <p className="text-sm text-gray-400">
+                    {formatFileSize(fileToView?.size || 0)}
+                  </p>
+                </div>
+              </div>
+              
+              {/* Toolbar */}
+              <div className="flex items-center space-x-2">
+                {fileContent?.type === "image" && (
+                  <>
+                    <button
+                      onClick={handleZoomOut}
+                      className="p-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-all"
+                      title="Zoom Out"
+                    >
+                      <ZoomOut className="w-4 h-4" />
+                    </button>
+                    <span className="text-sm text-gray-400 min-w-[60px] text-center">
+                      {zoom}%
+                    </span>
+                    <button
+                      onClick={handleZoomIn}
+                      className="p-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-all"
+                      title="Zoom In"
+                    >
+                      <ZoomIn className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={handleRotate}
+                      className="p-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-all"
+                      title="Rotate"
+                    >
+                      <RotateCw className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={handleCloseModal}
+                  className="p-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-all"
+                  title="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-auto p-6 bg-gray-900/50">
+              {isLoadingFile ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center space-y-4">
+                    <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p className="text-gray-400">Loading file...</p>
+                  </div>
+                </div>
+              ) : fileContent?.type === "image" ? (
+                <div className="flex items-center justify-center h-full">
+                  <img
+                    src={fileContent.url}
+                    alt={fileToView?.name}
+                    className="max-w-full max-h-full object-contain"
+                    style={{
+                      transform: `scale(${zoom / 100}) rotate(${rotation}deg)`,
+                      transition: "transform 0.3s ease",
+                    }}
+                  />
+                </div>
+              ) : fileContent?.type === "pdf" ? (
+                <iframe
+                  src={fileContent.url}
+                  className="w-full h-full min-h-[600px] rounded-lg"
+                  title={fileToView?.name}
+                />
+              ) : fileContent?.type === "text" ? (
+                <div className="bg-gray-800/50 rounded-lg p-4 h-full overflow-auto">
+                  <pre className="text-gray-300 text-sm font-mono whitespace-pre-wrap">
+                    {fileContent.content}
+                  </pre>
+                </div>
+              ) : fileContent?.type === "video" ? (
+                <div className="flex items-center justify-center h-full">
+                  <video
+                    src={fileContent.url}
+                    controls
+                    className="max-w-full max-h-full rounded-lg"
+                  >
+                    Your browser does not support video playback.
+                  </video>
+                </div>
+              ) : fileContent?.type === "audio" ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="bg-gray-800/50 rounded-lg p-8 space-y-4">
+                    <div className="w-24 h-24 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-full mx-auto flex items-center justify-center">
+                      <FileText className="w-12 h-12 text-white" />
+                    </div>
+                    <audio src={fileContent.url} controls className="w-full">
+                      Your browser does not support audio playback.
+                    </audio>
+                  </div>
+                </div>
+              ) : fileContent?.type === "unsupported" ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center space-y-4">
+                    <FileText className="w-16 h-16 text-gray-500 mx-auto" />
+                    <p className="text-gray-400">
+                      Preview not available for this file type
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Download the file to view it
+                    </p>
+                  </div>
+                </div>
+              ) : fileContent?.type === "error" ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center space-y-4">
+                    <X className="w-16 h-16 text-red-500 mx-auto" />
+                    <p className="text-red-400">Failed to load file</p>
+                    <p className="text-sm text-gray-500">
+                      Please try again later
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

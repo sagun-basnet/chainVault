@@ -1,5 +1,9 @@
 import { Share2, Brain, FileText, BarChart3, CheckCircle2 } from "lucide-react";
+import { useContext } from "react";
+import { AuthContext } from "../../../context/AuthContext";
+
 const UserDashboardHomePage = () => {
+  const { currentUser } = useContext(AuthContext);
   const stats = [
     {
       label: "Total Files",
@@ -64,7 +68,7 @@ const UserDashboardHomePage = () => {
         <h1 className="text-3xl font-bold text-white mb-2">
           Welcome!{" "}
           <span className="font-extrabold bg-gradient-to-r from-cyan-500 to-blue-500 bg-clip-text text-transparent">
-            Sagun Basnet
+            {currentUser?.name}
           </span>{" "}
         </h1>
         <p className="text-gray-400">

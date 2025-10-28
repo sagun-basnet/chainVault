@@ -29,9 +29,16 @@ const ProfilePage = () => {
     { label: "Tags Created", value: "45" },
   ];
 
+  const categoryData = [
+    { category: "Business", count: 450, percentage: 36 },
+    { category: "Media", count: 320, percentage: 26 },
+    { category: "Finance", count: 280, percentage: 22 },
+    { category: "Documents", count: 197, percentage: 16 },
+  ];
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between ">
         <h1 className="text-3xl font-bold text-white">Profile</h1>
         <button
           onClick={() => setIsEditing(!isEditing)}
@@ -42,7 +49,7 @@ const ProfilePage = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 ">
         {/* Profile Card */}
         <div className="lg:col-span-1">
           <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-xl rounded-2xl border border-gray-800 p-6">
@@ -78,6 +85,38 @@ const ProfilePage = () => {
               </div>
             </div>
           </div>
+          
+
+          <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-xl rounded-2xl border border-gray-800">
+        <div className="p-6 border-b border-gray-800">
+          <h2 className="text-xl font-semibold text-white">
+            Category Distribution
+          </h2>
+        </div>
+        <div className="p-6">
+          <div className="space-y-4">
+            {categoryData.map((item, index) => (
+              <div key={index}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-white font-medium">
+                    {item.category}
+                  </span>
+                  <span className="text-gray-400 text-sm">
+                    {item.count} files ({item.percentage}%)
+                  </span>
+                </div>
+                <div className="w-full bg-gray-800 rounded-full h-2">
+                  <div
+                    className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full transition-all"
+                    style={{ width: `${item.percentage}%` }}
+                  ></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
         </div>
 
         {/* Profile Details */}

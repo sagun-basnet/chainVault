@@ -76,6 +76,35 @@ export const accessSharedFile = async (req, res) => {
   }
 };
 
+export const getSharedFileList = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const files = await prisma.sharedLink.findMany({
+      where: userId ? { userId: Number(userId) } : {},
+      include: {
+        file: true,
+      },
+    });
+    res.status(200).json(files);
+  } catch (error) {
+    console.error("Get files error:", error);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
+export const deleteSharedFileLink = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await prisma.sharedLink.delete({
+      where: { id: Number(id) },
+    });
+    res.status(200).json({ message: "Link deleted successfully" });
+  } catch (error) {
+    console.error("Delete link error:", error);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
 async function deleteExpiredData() {
   console.log("I am from deleteExpiredDate Job");
 

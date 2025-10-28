@@ -99,7 +99,7 @@ const SharedFilesPage = () => {
   const sortedFiles = sortFiles(sharedFiles);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-8">
+    <div className="min-h-screen p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex w-full justify-between items-center">
           <div>

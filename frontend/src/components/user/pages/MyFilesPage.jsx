@@ -50,7 +50,7 @@ const MyFilesPage = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [fileToShare, setFileToShare] = useState(null);
   const [sharePermission, setSharePermission] = useState("VIEW_ONLY");
-  const [shareExpireIn, setShareExpireIn] = useState("24hr");
+  const [shareExpireIn, setShareExpireIn] = useState("1");
   const [sharePassword, setSharePassword] = useState("");
   const [shareLink, setShareLink] = useState("");
   const [linkGenerated, setLinkGenerated] = useState(false);
@@ -273,7 +273,7 @@ const MyFilesPage = () => {
     setFileToShare(file);
     setShowShareModal(true);
     setSharePermission("VIEW_ONLY");
-    setShareExpireIn("24hr");
+    setShareExpireIn("1");
     setSharePassword("");
     setShareLink("");
     setLinkGenerated(false);
@@ -284,7 +284,7 @@ const MyFilesPage = () => {
     setShowShareModal(false);
     setFileToShare(null);
     setSharePermission("VIEW_ONLY");
-    setShareExpireIn("24hr");
+    setShareExpireIn("1");
     setSharePassword("");
     setShareLink("");
     setLinkGenerated(false);
@@ -297,6 +297,7 @@ const MyFilesPage = () => {
       userId: currentUser?.id,
       password: sharePassword || null,
       permission: sharePermission,
+      expiresInDays: shareExpireIn === "never" ? null : Number(shareExpireIn),
     })
       .then((res) => {
         console.log(res);
@@ -795,11 +796,11 @@ const MyFilesPage = () => {
                     onChange={(e) => setShareExpireIn(e.target.value)}
                     className="w-full px-4 py-2 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-cyan-500 focus:outline-none transition-all"
                   >
-                    <option value="1">1 Hour</option>
-                    <option value="6hr">6 Hours</option>
-                    <option value="24hr">24 Hours</option>
-                    <option value="7days">7 Days</option>
-                    <option value="30days">30 Days</option>
+                    <option value="0.1">1 Hour</option>
+                    <option value="0.6">6 Hours</option>
+                    <option value="1">24 Hours</option>
+                    <option value="7">7 Days</option>
+                    <option value="30">30 Days</option>
                     <option value="never">Never</option>
                   </select>
                 </div>

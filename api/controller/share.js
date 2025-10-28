@@ -10,9 +10,22 @@ export const createShareLink = async (req, res) => {
     console.log(req.body);
 
     const token = crypto.randomBytes(12).toString("hex");
-    const expiresAt = expiresInDays
-      ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
-      : null;
+
+    function getFutureDate(value) {
+      const now = new Date();
+
+      if (value === 0.1) now.setHours(now.getHours() + 1);
+      else if (value === 0.6) now.setHours(now.getHours() + 6);
+      else if (value === 1) now.setDate(now.getDate() + 1);
+      else if (value === 7) now.setDate(now.getDate() + 7);
+      else if (value === 30) now.setDate(now.getDate() + 30);
+
+      return now.toISOString(); // ✅ valid ISO date for MySQL
+    }
+
+    console.log(getFutureDate(Number(expiresInDays)), "Expire");
+
+    const expiresAt = getFutureDate(Number(expiresInDays));
 
     const sharedLink = await prisma.sharedLink.create({
       data: {
@@ -62,3 +75,16 @@ export const accessSharedFile = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+async function deleteExpiredData() {
+  console.log("I am from deleteExpiredDate Job");
+
+  const now = new Date().toISOString(); // current ISO time
+  const result = await prisma.$executeRaw`
+    DELETE FROM sharedlink WHERE expiresAt <= ${now}
+  `;
+  console.log(`${result} expired rows deleted`);
+}
+
+// run every 12 hours
+setInterval(deleteExpiredData, 12 * 60 * 60 * 1000);

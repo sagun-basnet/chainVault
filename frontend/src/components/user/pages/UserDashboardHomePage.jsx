@@ -1,66 +1,68 @@
-import { Share2, Brain, FileText, BarChart3, CheckCircle2 } from "lucide-react";
-import { useContext } from "react";
-import { AuthContext } from "../../../context/AuthContext";
+import { Share2, Brain, FileText, BarChart3 } from "lucide-react";
+import { useContext, useEffect, useState } from "react";
+import { AuthContext } from "../../../context/authContext";
+import { get } from "../../../utils/api";
+import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const UserDashboardHomePage = () => {
   const { currentUser } = useContext(AuthContext);
-  const stats = [
-    {
-      label: "Total Files",
-      value: "1,247",
-      change: "+12%",
-      icon: <FileText className="w-6 h-6" />,
-      color: "from-cyan-500 to-blue-500",
-    },
-    {
-      label: "Shared Files",
-      value: "156",
-      change: "+8%",
-      icon: <Share2 className="w-6 h-6" />,
-      color: "from-green-500 to-emerald-500",
-    },
-    {
-      label: "AI Processed",
-      value: "2,340",
-      change: "+23%",
-      icon: <Brain className="w-6 h-6" />,
-      color: "from-purple-500 to-pink-500",
-    },
-    {
-      label: "Storage Used",
-      value: "847 GB",
-      change: "+5%",
-      icon: <BarChart3 className="w-6 h-6" />,
-      color: "from-orange-500 to-red-500",
-    },
+  const [allFiles, setAllFiles] = useState([]);
+  const [sharedFiles, setSharedFiles] = useState([]);
+
+  const fetchData = async () => {
+    await get(`/api/files/user-id/${parseInt(currentUser?.id)}`)
+      .then((res) => {
+        console.log(res, 13);
+        setAllFiles(res);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
+  const fetchData1 = async () => {
+    await get(`api/files/get-share-file-list/${currentUser?.id}`)
+      .then((res) => {
+        console.log(res);
+        setSharedFiles(res);
+      })
+      .catch((err) => {
+        console.error("Error fetching shared files:", err);
+      });
+  };
+
+  const totalFiles = allFiles.length;
+  const totalSharedFiles = sharedFiles.length;
+  const storageUsed = allFiles.reduce((total, file) => total + (file.size || 0), 0);
+
+  useEffect(() => {
+    fetchData();
+    fetchData1();
+  }, [currentUser?.id]);
+
+  // Group files by type for pie chart
+  const fileTypeData = allFiles.reduce((acc, file) => {
+    const ext = file.name?.split('.').pop()?.toLowerCase() || 'other';
+    const existing = acc.find(item => item.name === ext);
+    if (existing) {
+      existing.value += 1;
+    } else {
+      acc.push({ name: ext, value: 1 });
+    }
+    return acc;
+  }, []);
+
+  // Storage by month (sample data - replace with actual dates from your files)
+  const storageByMonth = [
+    { month: 'Jan', storage: 2.5 },
+    { month: 'Feb', storage: 3.2 },
+    { month: 'Mar', storage: 4.1 },
+    { month: 'Apr', storage: 5.3 },
+    { month: 'May', storage: 6.8 },
+    { month: 'Jun', storage: (storageUsed / (1024 * 1024 * 1024)) },
   ];
 
-  const recentActivity = [
-    {
-      action: "Uploaded",
-      file: "Project_Proposal.pdf",
-      time: "2 hours ago",
-      status: "success",
-    },
-    {
-      action: "Shared",
-      file: "Marketing_Assets.zip",
-      time: "5 hours ago",
-      status: "success",
-    },
-    {
-      action: "AI Classified",
-      file: "Financial_Report.xlsx",
-      time: "1 day ago",
-      status: "success",
-    },
-    {
-      action: "Downloaded",
-      file: "Meeting_Notes.docx",
-      time: "2 days ago",
-      status: "success",
-    },
-  ];
+  const COLORS = ['#06b6d4', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#ec4899'];
 
   return (
     <div className="space-y-6">
@@ -78,55 +80,162 @@ const UserDashboardHomePage = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <div
-            key={index}
-            className="bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-xl rounded-2xl p-6 border border-gray-800 hover:border-gray-700 transition-all"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div
-                className={`w-12 h-12 bg-gradient-to-br ${stat.color} rounded-lg flex items-center justify-center`}
-              >
-                {stat.icon}
-              </div>
-              <span className="text-green-400 text-sm font-medium">
-                {stat.change}
-              </span>
+        <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-xl rounded-2xl p-6 border border-gray-800 hover:border-gray-700 transition-all">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-lg flex items-center justify-center">
+              <FileText className="w-6 h-6" />
             </div>
-            <h3 className="text-2xl font-bold text-white mb-1">{stat.value}</h3>
-            <p className="text-gray-400 text-sm">{stat.label}</p>
           </div>
-        ))}
+          <h3 className="text-2xl font-bold text-white mb-1">{totalFiles}</h3>
+          <p className="text-gray-400 text-sm">Total Files</p>
+        </div>
+
+        <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-xl rounded-2xl p-6 border border-gray-800 hover:border-gray-700 transition-all">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
+              <Share2 className="w-6 h-6" />
+            </div>
+          </div>
+          <h3 className="text-2xl font-bold text-white mb-1">{totalSharedFiles}</h3>
+          <p className="text-gray-400 text-sm">Shared Files</p>
+        </div>
+
+        <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-xl rounded-2xl p-6 border border-gray-800 hover:border-gray-700 transition-all">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+              <Brain className="w-6 h-6" />
+            </div>
+          </div>
+          <h3 className="text-2xl font-bold text-white mb-1">{totalFiles}</h3>
+          <p className="text-gray-400 text-sm">AI Processed</p>
+        </div>
+
+        <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-xl rounded-2xl p-6 border border-gray-800 hover:border-gray-700 transition-all">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
+              <BarChart3 className="w-6 h-6" />
+            </div>
+          </div>
+          <h3 className="text-2xl font-bold text-white mb-1">
+            {((storageUsed) / (1024 * 1024 * 1024)).toFixed(2)} GB
+          </h3>
+          <p className="text-gray-400 text-sm">Storage Used</p>
+        </div>
       </div>
 
-      {/* Recent Activity */}
-      <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-xl rounded-2xl border border-gray-800">
-        <div className="p-6 border-b border-gray-800">
-          <h2 className="text-xl font-semibold text-white">Recent Activity</h2>
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* File Types Distribution */}
+        <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-xl rounded-2xl border border-gray-800">
+          <div className="p-6 border-b border-gray-800">
+            <h2 className="text-xl font-semibold text-white">File Types Distribution</h2>
+          </div>
+          <div className="p-6">
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={fileTypeData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={100}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {fileTypeData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '0.5rem' }}
+                  labelStyle={{ color: '#fff' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-        <div className="p-6">
-          <div className="space-y-4">
-            {recentActivity.map((activity, index) => (
-              <div
-                key={index}
-                className="flex items-center space-x-4 p-4 rounded-lg hover:bg-gray-800/50 transition-colors"
+
+        {/* Storage Growth */}
+        <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-xl rounded-2xl border border-gray-800">
+          <div className="p-6 border-b border-gray-800">
+            <h2 className="text-xl font-semibold text-white">Storage Growth</h2>
+          </div>
+          <div className="p-6">
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={storageByMonth}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis
+                  dataKey="month"
+                  stroke="#9ca3af"
+                  style={{ fontSize: '12px' }}
+                />
+                <YAxis
+                  stroke="#9ca3af"
+                  style={{ fontSize: '12px' }}
+                  label={{ value: 'GB', angle: -90, position: 'insideLeft', fill: '#9ca3af' }}
+                />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '0.5rem' }}
+                  labelStyle={{ color: '#fff' }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="storage"
+                  stroke="#06b6d4"
+                  strokeWidth={3}
+                  dot={{ fill: '#06b6d4', r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* File Statistics Bar Chart */}
+        <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-xl rounded-2xl border border-gray-800 lg:col-span-2">
+          <div className="p-6 border-b border-gray-800">
+            <h2 className="text-xl font-semibold text-white">File Statistics</h2>
+          </div>
+          <div className="p-6">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart
+                data={[
+                  { name: 'Total Files', value: totalFiles, fill: '#06b6d4' },
+                  { name: 'Shared Files', value: totalSharedFiles, fill: '#10b981' },
+                  { name: 'AI Processed', value: totalFiles, fill: '#8b5cf6' },
+                ]}
               >
-                <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-lg flex items-center justify-center">
-                  <CheckCircle2 className="w-5 h-5 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-medium text-white">
-                    {activity.action}{" "}
-                    <span className="text-cyan-500">{activity.file}</span>
-                  </h3>
-                  <p className="text-sm text-gray-400">{activity.time}</p>
-                </div>
-              </div>
-            ))}
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis
+                  dataKey="name"
+                  stroke="#9ca3af"
+                  style={{ fontSize: '12px' }}
+                />
+                <YAxis
+                  stroke="#9ca3af"
+                  style={{ fontSize: '12px' }}
+                />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '0.5rem' }}
+                  labelStyle={{ color: '#fff' }}
+                />
+                <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                  {[
+                    { name: 'Total Files', value: totalFiles, fill: '#06b6d4' },
+                    { name: 'Shared Files', value: totalSharedFiles, fill: '#10b981' },
+                    { name: 'AI Processed', value: totalFiles, fill: '#8b5cf6' },
+                  ].map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
     </div>
   );
 };
+
 export default UserDashboardHomePage;

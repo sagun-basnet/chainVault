@@ -18,7 +18,7 @@ export default function Login() {
     const res = await login({ email, password });
     if (res.message === "Login Successfully.") {
       toast.success(res.message);
-      navigate("/dashboard");
+      navigate("/user-dashboard");
     } else {
       toast.error("Login failed");
     }

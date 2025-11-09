@@ -25,7 +25,7 @@ router.post("/upload-multiple", upload.array("files", 10), async (req, res) => {
     }
 
     const { userId, tags } = req.body;
-    const tagArray = tags ? JSON.parse(tags) : undefined;
+    // const tagArray = tags ? JSON.parse(tags) : undefined;
 
     const results = [];
 
@@ -43,6 +43,8 @@ router.post("/upload-multiple", upload.array("files", 10), async (req, res) => {
           maxBodyLength: Infinity,
         }
       );
+
+      console.log(response.data, ":RES FROM AI");
 
       // Assume response.data.results is an array of classification results for each file
       const aiResult = response.data.results.find(

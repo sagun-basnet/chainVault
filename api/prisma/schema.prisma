@@ -7,101 +7,102 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id             Int             @id @default(autoincrement())
-  name           String
-  email          String          @unique
-  password       String
-  role           Role            @default(USER)
-  files          File[]
-  sharedLinks    SharedLink[]
-  blockchainLogs BlockchainLog[]
-  createdAt      DateTime        @default(now())
-}
-
-model File {
-  id        Int      @id @default(autoincrement())
-  name      String
-  path      String
-  size      Int
-  type      String
-  category  String?
-  userId    Int
-  createdAt DateTime @default(now())
-
-  user           User            @relation(fields: [userId], references: [id])
-  tags           FileTag[]
-  sharedLinks    SharedLink[]
-  blockchainLogs BlockchainLog[]
-}
-
-model Tag {
-  id    Int       @id @default(autoincrement())
-  name  String    @unique
-  files FileTag[]
-}
-
-model FileTag {
-  id     Int @id @default(autoincrement())
-  fileId Int
-  tagId  Int
-
-  file File @relation(fields: [fileId], references: [id])
-  tag  Tag  @relation(fields: [tagId], references: [id])
-
-  @@unique([fileId, tagId])
-}
-
-model SharedLink {
-  id         Int             @id @default(autoincrement())
+model blockchainlog {
+  id         Int                  @id @default(autoincrement())
   fileId     Int
   userId     Int
-  token      String          @unique
-  password   String?
-  permission SharePermission
-  expiresAt  DateTime?
-  createdAt  DateTime        @default(now())
+  action     blockchainlog_action
+  hash       String
+  txHash     String?
+  timestamp  DateTime             @default(now())
+  file       file                 @relation(fields: [fileId], references: [id], onDelete: Cascade, map: "BlockchainLog_fileId_fkey")
+  user       user                 @relation(fields: [userId], references: [id], onDelete: Cascade, map: "BlockchainLog_userId_fkey")
+  sharedlink sharedlink[]
 
-  file            File           @relation(fields: [fileId], references: [id])
-  user            User           @relation(fields: [userId], references: [id])
-  blockchainLog   BlockchainLog? @relation(fields: [blockchainLogId], references: [id])
+  @@index([fileId], map: "BlockchainLog_fileId_fkey")
+  @@index([userId], map: "BlockchainLog_userId_fkey")
+}
+
+model file {
+  id            Int             @id @default(autoincrement())
+  name          String
+  path          String
+  size          Int
+  type          String
+  category      String?
+  userId        Int
+  embedding     Json?
+  createdAt     DateTime        @default(now())
+  blockchainlog blockchainlog[]
+  user          user            @relation(fields: [userId], references: [id], onDelete: Cascade, map: "File_userId_fkey")
+
+  tags       filetag[]
+  sharedlink sharedlink[]
+
+  @@index([userId], map: "File_userId_fkey")
+}
+
+model filetag {
+  id     Int  @id @default(autoincrement())
+  fileId Int
+  tagId  Int
+  file   file @relation(fields: [fileId], references: [id], onDelete: Cascade, map: "FileTag_fileId_fkey")
+  tag    tag  @relation(fields: [tagId], references: [id], onDelete: Cascade, map: "FileTag_tagId_fkey")
+
+  @@unique([fileId, tagId], map: "FileTag_fileId_tagId_key")
+  @@index([tagId], map: "FileTag_tagId_fkey")
+}
+
+model sharedlink {
+  id              Int                   @id @default(autoincrement())
+  fileId          Int
+  userId          Int
+  token           String                @unique(map: "SharedLink_token_key")
+  password        String?
+  permission      sharedlink_permission
+  expiresAt       DateTime?
+  createdAt       DateTime              @default(now())
   blockchainLogId Int?
+  blockchainlog   blockchainlog?        @relation(fields: [blockchainLogId], references: [id], map: "SharedLink_blockchainLogId_fkey")
+  file            file                  @relation(fields: [fileId], references: [id], onDelete: Cascade, map: "SharedLink_fileId_fkey")
+  user            user                  @relation(fields: [userId], references: [id], onDelete: Cascade, map: "SharedLink_userId_fkey")
+
+  @@index([blockchainLogId], map: "SharedLink_blockchainLogId_fkey")
+  @@index([fileId], map: "SharedLink_fileId_fkey")
+  @@index([userId], map: "SharedLink_userId_fkey")
 }
 
-model BlockchainLog {
-  id        Int        @id @default(autoincrement())
-  fileId    Int
-  userId    Int
-  action    FileAction
-  hash      String
-  txHash    String?
-  timestamp DateTime   @default(now())
-
-  file       File         @relation(fields: [fileId], references: [id])
-  user       User         @relation(fields: [userId], references: [id])
-  SharedLink SharedLink[]
+model tag {
+  id      Int       @id @default(autoincrement())
+  name    String    @unique(map: "Tag_name_key")
+  filetag filetag[]
 }
 
-model PasswordResetOtp {
-  id        Int      @id @default(autoincrement())
-  email     String
-  otp       String
-  expiresAt DateTime
+model user {
+  id            Int             @id @default(autoincrement())
+  name          String
+  email         String          @unique(map: "User_email_key")
+  password      String
+  role          user_role       @default(USER)
+  createdAt     DateTime        @default(now())
+  blockchainlog blockchainlog[]
+  file          file[]
+  sharedlink    sharedlink[]
 }
 
-enum Role {
-  USER
-  ADMIN
-}
-
-enum SharePermission {
-  VIEW_ONLY
-  DOWNLOAD
-}
-
-enum FileAction {
+enum blockchainlog_action {
   UPLOAD
   DELETE
   UPDATE
   SHARE
+}
+
+enum user_role {
+  USER
+  ADMIN
+}
+
+enum sharedlink_permission {
+  VIEW_ONLY
+  DOWNLOAD
 }

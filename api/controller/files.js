@@ -50,10 +50,8 @@ export const createFile = async (req, res) => {
 
 // Get all files (optionally by user)
 export const getFiles = async (req, res) => {
-  const { userId } = req.query;
   try {
     const files = await prisma.file.findMany({
-      where: userId ? { userId: Number(userId) } : {},
       include: { tags: { include: { tag: true } }, user: true },
     });
     res.status(200).json(files);

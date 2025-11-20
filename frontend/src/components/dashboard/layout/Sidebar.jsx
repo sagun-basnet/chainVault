@@ -13,7 +13,6 @@ import {
 const Sidebar = ({ activeTab, setActiveTab }) => {
   const sidebarItems = [
     { id: "overview", icon: <Home className="w-5 h-5" />, label: "Overview" },
-    { id: "files", icon: <Folder className="w-5 h-5" />, label: "Files" },
     {
       id: "analytics",
       icon: <BarChart3 className="w-5 h-5" />,

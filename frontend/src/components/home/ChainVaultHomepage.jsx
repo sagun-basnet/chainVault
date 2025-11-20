@@ -165,13 +165,13 @@ const ChainVaultHomepage = () => {
             >
               Use Cases
             </a>
-            {currentUser.role === "USER" ? (
+            {currentUser?.role === "USER" ? (
               <Link to="/user-dashboard">
                 <button className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 px-6 py-2 rounded-lg font-medium transition-all transform hover:scale-105">
                   Get Started
                 </button>
               </Link>
-            ) : currentUser.role === "ADMIN" ? (
+            ) : currentUser?.role === "ADMIN" ? (
               <Link to="/dashboard">
                 <button className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 px-6 py-2 rounded-lg font-medium transition-all transform hover:scale-105">
                   Get Started

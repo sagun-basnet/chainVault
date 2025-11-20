@@ -39,18 +39,6 @@ const TopBar = ({
       link: "/user-dashboard/shared",
     },
     {
-      id: "aiinsights",
-      icon: <Brain className="w-5 h-5" />,
-      label: "Insights",
-      link: "/user-dashboard/insights",
-    },
-    {
-      id: "tags",
-      icon: <Tag className="w-5 h-5" />,
-      label: "Tags",
-      link: "/user-dashboard/tags",
-    },
-    {
       id: "profile",
       icon: <User className="w-5 h-5" />,
       label: "Profile",

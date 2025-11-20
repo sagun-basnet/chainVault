@@ -2,7 +2,20 @@ import { Share2, Brain, FileText, BarChart3 } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../../context/authContext";
 import { get } from "../../../utils/api";
-import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 const UserDashboardHomePage = () => {
   const { currentUser } = useContext(AuthContext);
@@ -33,7 +46,10 @@ const UserDashboardHomePage = () => {
 
   const totalFiles = allFiles.length;
   const totalSharedFiles = sharedFiles.length;
-  const storageUsed = allFiles.reduce((total, file) => total + (file.size || 0), 0);
+  const storageUsed = allFiles.reduce(
+    (total, file) => total + (file.size || 0),
+    0
+  );
 
   useEffect(() => {
     fetchData();
@@ -42,8 +58,8 @@ const UserDashboardHomePage = () => {
 
   // Group files by type for pie chart
   const fileTypeData = allFiles.reduce((acc, file) => {
-    const ext = file.name?.split('.').pop()?.toLowerCase() || 'other';
-    const existing = acc.find(item => item.name === ext);
+    const ext = file.name?.split(".").pop()?.toLowerCase() || "other";
+    const existing = acc.find((item) => item.name === ext);
     if (existing) {
       existing.value += 1;
     } else {
@@ -53,16 +69,33 @@ const UserDashboardHomePage = () => {
   }, []);
 
   // Storage by month (sample data - replace with actual dates from your files)
-  const storageByMonth = [
-    { month: 'Jan', storage: 2.5 },
-    { month: 'Feb', storage: 3.2 },
-    { month: 'Mar', storage: 4.1 },
-    { month: 'Apr', storage: 5.3 },
-    { month: 'May', storage: 6.8 },
-    { month: 'Jun', storage: (storageUsed / (1024 * 1024 * 1024)) },
-  ];
+  const getLast6MonthsStorage = (storageUsed) => {
+    const result = [];
+    const now = new Date();
 
-  const COLORS = ['#06b6d4', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#ec4899'];
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+
+      const monthName = date.toLocaleString("default", { month: "short" });
+
+      result.push({
+        month: monthName,
+        storage: i === 0 ? storageUsed / (1024 * 1024 * 1024) : 0,
+      });
+    }
+
+    return result;
+  };
+  const storageByMonth = getLast6MonthsStorage(storageUsed);
+
+  const COLORS = [
+    "#06b6d4",
+    "#10b981",
+    "#8b5cf6",
+    "#f59e0b",
+    "#ef4444",
+    "#ec4899",
+  ];
 
   return (
     <div className="space-y-6">
@@ -96,7 +129,9 @@ const UserDashboardHomePage = () => {
               <Share2 className="w-6 h-6" />
             </div>
           </div>
-          <h3 className="text-2xl font-bold text-white mb-1">{totalSharedFiles}</h3>
+          <h3 className="text-2xl font-bold text-white mb-1">
+            {totalSharedFiles}
+          </h3>
           <p className="text-gray-400 text-sm">Shared Files</p>
         </div>
 
@@ -117,7 +152,7 @@ const UserDashboardHomePage = () => {
             </div>
           </div>
           <h3 className="text-2xl font-bold text-white mb-1">
-            {((storageUsed) / (1024 * 1024 * 1024)).toFixed(2)} GB
+            {(storageUsed / (1024 * 1024 * 1024)).toFixed(2)} GB
           </h3>
           <p className="text-gray-400 text-sm">Storage Used</p>
         </div>
@@ -128,7 +163,9 @@ const UserDashboardHomePage = () => {
         {/* File Types Distribution */}
         <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-xl rounded-2xl border border-gray-800">
           <div className="p-6 border-b border-gray-800">
-            <h2 className="text-xl font-semibold text-white">File Types Distribution</h2>
+            <h2 className="text-xl font-semibold text-white">
+              File Types Distribution
+            </h2>
           </div>
           <div className="p-6">
             <ResponsiveContainer width="100%" height={300}>
@@ -138,18 +175,27 @@ const UserDashboardHomePage = () => {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) =>
+                    `${name} ${(percent * 100).toFixed(0)}%`
+                  }
                   outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
                 >
                   {fileTypeData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                    />
                   ))}
                 </Pie>
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '0.5rem' }}
-                  labelStyle={{ color: '#fff' }}
+                  contentStyle={{
+                    backgroundColor: "#1f2937",
+                    border: "1px solid #374151",
+                    borderRadius: "0.5rem",
+                  }}
+                  labelStyle={{ color: "#fff" }}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -168,23 +214,32 @@ const UserDashboardHomePage = () => {
                 <XAxis
                   dataKey="month"
                   stroke="#9ca3af"
-                  style={{ fontSize: '12px' }}
+                  style={{ fontSize: "12px" }}
                 />
                 <YAxis
                   stroke="#9ca3af"
-                  style={{ fontSize: '12px' }}
-                  label={{ value: 'GB', angle: -90, position: 'insideLeft', fill: '#9ca3af' }}
+                  style={{ fontSize: "12px" }}
+                  label={{
+                    value: "GB",
+                    angle: -90,
+                    position: "insideLeft",
+                    fill: "#9ca3af",
+                  }}
                 />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '0.5rem' }}
-                  labelStyle={{ color: '#fff' }}
+                  contentStyle={{
+                    backgroundColor: "#1f2937",
+                    border: "1px solid #374151",
+                    borderRadius: "0.5rem",
+                  }}
+                  labelStyle={{ color: "#fff" }}
                 />
                 <Line
                   type="monotone"
                   dataKey="storage"
                   stroke="#06b6d4"
                   strokeWidth={3}
-                  dot={{ fill: '#06b6d4', r: 4 }}
+                  dot={{ fill: "#06b6d4", r: 4 }}
                   activeDot={{ r: 6 }}
                 />
               </LineChart>
@@ -195,36 +250,51 @@ const UserDashboardHomePage = () => {
         {/* File Statistics Bar Chart */}
         <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-xl rounded-2xl border border-gray-800 lg:col-span-2">
           <div className="p-6 border-b border-gray-800">
-            <h2 className="text-xl font-semibold text-white">File Statistics</h2>
+            <h2 className="text-xl font-semibold text-white">
+              File Statistics
+            </h2>
           </div>
           <div className="p-6">
             <ResponsiveContainer width="100%" height={300}>
               <BarChart
                 data={[
-                  { name: 'Total Files', value: totalFiles, fill: '#06b6d4' },
-                  { name: 'Shared Files', value: totalSharedFiles, fill: '#10b981' },
-                  { name: 'AI Processed', value: totalFiles, fill: '#8b5cf6' },
+                  { name: "Total Files", value: totalFiles, fill: "#06b6d4" },
+                  {
+                    name: "Shared Files",
+                    value: totalSharedFiles,
+                    fill: "#10b981",
+                  },
+                  { name: "AI Processed", value: totalFiles, fill: "#8b5cf6" },
                 ]}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis
                   dataKey="name"
                   stroke="#9ca3af"
-                  style={{ fontSize: '12px' }}
+                  style={{ fontSize: "12px" }}
                 />
-                <YAxis
-                  stroke="#9ca3af"
-                  style={{ fontSize: '12px' }}
-                />
+                <YAxis stroke="#9ca3af" style={{ fontSize: "12px" }} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '0.5rem' }}
-                  labelStyle={{ color: '#fff' }}
+                  contentStyle={{
+                    backgroundColor: "#1f2937",
+                    border: "1px solid #374151",
+                    borderRadius: "0.5rem",
+                  }}
+                  labelStyle={{ color: "#fff" }}
                 />
                 <Bar dataKey="value" radius={[8, 8, 0, 0]}>
                   {[
-                    { name: 'Total Files', value: totalFiles, fill: '#06b6d4' },
-                    { name: 'Shared Files', value: totalSharedFiles, fill: '#10b981' },
-                    { name: 'AI Processed', value: totalFiles, fill: '#8b5cf6' },
+                    { name: "Total Files", value: totalFiles, fill: "#06b6d4" },
+                    {
+                      name: "Shared Files",
+                      value: totalSharedFiles,
+                      fill: "#10b981",
+                    },
+                    {
+                      name: "AI Processed",
+                      value: totalFiles,
+                      fill: "#8b5cf6",
+                    },
                   ].map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />
                   ))}

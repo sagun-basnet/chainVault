@@ -116,4 +116,4 @@ async function deleteExpiredData() {
 }
 
 // run every 12 hours
-setInterval(deleteExpiredData, 12 * 60 * 60 * 1000);
+setInterval(deleteExpiredData, 2 * 60 * 60 * 1000);

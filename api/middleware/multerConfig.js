@@ -32,15 +32,28 @@ function checkFileType(file, cb) {
   const extname = allowedFileTypes.test(
     path.extname(file.originalname).toLowerCase()
   );
-  const mimetype = allowedFileTypes.test(file.mimetype);
-
-  if (extname && mimetype) {
-    return cb(null, true);
+  
+  // For code files (.js, .jsx, .py, etc.), only check extension
+  // because their mimetypes are generic (text/plain, text/javascript, etc.)
+  const codeFileExtensions = /\.jsx?$|\.py$|\.java$|\.c$|\.cpp$|\.cs$/i;
+  const isCodeFile = codeFileExtensions.test(file.originalname);
+  
+  if (isCodeFile) {
+    // For code files, only check extension
+    if (extname) {
+      return cb(null, true);
+    }
   } else {
-    cb(
-      "Error: File type not supported! Allowed types: jpg, jpeg, png, gif, pdf, docx, txt, js, py, java, jsx, csv, xlsx"
-    );
+    // For other files (images, docs), check both extension and mimetype
+    const mimetype = allowedFileTypes.test(file.mimetype);
+    if (extname && mimetype) {
+      return cb(null, true);
+    }
   }
+  
+  cb(
+    "Error: File type not supported! Allowed types: jpg, jpeg, png, gif, pdf, docx, txt, js, py, java, jsx, csv, xlsx"
+  );
 }
 
 export default upload;

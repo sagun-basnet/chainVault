@@ -1,0 +1,14 @@
+{
+    "ignore": [
+        "public/uploads/*",
+        "*.log"
+    ],
+    "watch": [
+        "*.js",
+        "controller/**/*.js",
+        "router/**/*.js",
+        "services/**/*.js",
+        "middleware/**/*.js"
+    ],
+    "ext": "js,json"
+}

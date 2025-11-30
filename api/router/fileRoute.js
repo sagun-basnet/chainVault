@@ -99,7 +99,7 @@ router.post("/upload-multiple", upload.array("files", 10), async (req, res) => {
           hashSum.update(fileBuffer);
           const fileHash = hashSum.digest('hex');
           
-          const txHash = await logFileAction(fileHash, "UPLOAD", userId.toString(), file.originalname);
+          const txHash = await logFileAction(fileHash, "UPLOAD", fileData.userId.toString(), file.originalname);
           
           if (txHash) {
             console.log(`Logged upload for ${file.originalname} to blockchain. Tx: ${txHash}`);
@@ -109,7 +109,7 @@ router.post("/upload-multiple", upload.array("files", 10), async (req, res) => {
             if (savedFileId) {
                 await createBlockchainLog({
                     fileId: savedFileId,
-                    userId: userId,
+                    userId: fileData.userId,
                     action: "UPLOAD",
                     hash: fileHash,
                     txHash: txHash

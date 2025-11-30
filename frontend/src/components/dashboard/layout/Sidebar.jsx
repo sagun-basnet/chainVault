@@ -4,27 +4,38 @@ import {
   Share2,
   LogOut,
   Home,
-  Folder,
   BarChart3,
   Database,
   User,
+  Folder,
+  Brain,
+  FileText,
+  Settings,
 } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 
 const Sidebar = ({ activeTab, setActiveTab }) => {
+  const location = useLocation();
+
   const sidebarItems = [
-    { id: "overview", icon: <Home className="w-5 h-5" />, label: "Overview" },
+    { id: "overview", icon: <Home className="w-5 h-5" />, label: "Dashboard", link: "/dashboard" },
+    { id: "files", icon: <Folder className="w-5 h-5" />, label: "File Management", link: "/dashboard/files" },
+    { id: "users", icon: <User className="w-5 h-5" />, label: "User Management", link: "/dashboard/users" },
+    { id: "ai", icon: <Brain className="w-5 h-5" />, label: "AI Management", link: "/dashboard/ai" },
+    {
+      id: "blockchain",
+      icon: <Database className="w-5 h-5" />,
+      label: "Blockchain Log",
+      link: "/dashboard/blockchain-log",
+    },
     {
       id: "analytics",
       icon: <BarChart3 className="w-5 h-5" />,
       label: "Analytics",
+      link: "/dashboard/analytics",
     },
-    {
-      id: "blockchain",
-      icon: <Database className="w-5 h-5" />,
-      label: "Blockchain",
-    },
-    { id: "sharing", icon: <Share2 className="w-5 h-5" />, label: "Sharing" },
-    { id: "security", icon: <Shield className="w-5 h-5" />, label: "Security" },
+    { id: "logs", icon: <FileText className="w-5 h-5" />, label: "System Logs", link: "/dashboard/logs" },
+    { id: "settings", icon: <Settings className="w-5 h-5" />, label: "Settings", link: "/dashboard/settings" },
   ];
 
   return (
@@ -43,18 +54,19 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-2">
           {sidebarItems.map((item) => (
-            <button
+            <Link
+              to={item.link}
               key={item.id}
               onClick={() => setActiveTab(item.id)}
               className={`w-full flex items-center px-4 py-3 rounded-lg text-left transition-all ${
-                activeTab === item.id
+                location.pathname === item.link
                   ? "bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-500 border border-cyan-500/30"
                   : "text-gray-400 hover:text-gray-300 hover:bg-gray-800/50"
               }`}
             >
               {item.icon}
               <span className="ml-3 font-medium">{item.label}</span>
-            </button>
+            </Link>
           ))}
         </nav>
 

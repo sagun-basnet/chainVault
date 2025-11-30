@@ -11,6 +11,7 @@ import {
   LogOut,
   Menu,
   X,
+  Database,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 const TopBar = ({
@@ -43,6 +44,12 @@ const TopBar = ({
       icon: <User className="w-5 h-5" />,
       label: "Profile",
       link: "/user-dashboard/user-profile",
+    },
+    {
+      id: "blockchain",
+      icon: <Database className="w-5 h-5" />,
+      label: "Blockchain",
+      link: "/user-dashboard/blockchain-log",
     },
   ];
 

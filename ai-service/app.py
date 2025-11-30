@@ -21,6 +21,10 @@ os.makedirs("temp", exist_ok=True)
 app = FastAPI()
 model = joblib.load("models/classifier.pkl")
 
+@app.get("/")
+def home():
+    return {"status": "online", "service": "AI Classification & Search"}
+
 # File Index Management
 INDEX_FILE = "file_index.json"
 
@@ -33,6 +37,12 @@ def load_index():
 def save_index(index):
     with open(INDEX_FILE, "w") as f:
         json.dump(index, f)
+
+@app.get("/index-stats/")
+def get_index_stats():
+    """Get statistics about the indexed files."""
+    index = load_index()
+    return {"total_files": len(index)}
 
 def generate_tags(text):
     if not text.strip() or text.strip() == "[[IMAGE_NO_TEXT]]":

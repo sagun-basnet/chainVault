@@ -13,6 +13,7 @@ import {
   downloadFileById,
   searchFiles,
   createBlockchainLog,
+  getBlockchainLogs,
 } from "../controller/files.js";
 import crypto from "crypto";
 import { logFileAction } from "../services/blockchain.js";
@@ -142,6 +143,7 @@ router.get("/user-id/:id", getFileByUserId);
 router.put("/:id", updateFile);
 router.delete("/:id", deleteFile);
 router.get("/search/semantic", searchFiles);
+router.get("/blockchain/logs", getBlockchainLogs);
 router.get("/download/:id/:uid", downloadFileById);
 
 export default router;

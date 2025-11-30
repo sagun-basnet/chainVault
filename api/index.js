@@ -3,6 +3,7 @@ import cors from "cors";
 import authRoute from "./router/authRoute.js";
 import fileRoute from "./router/fileRoute.js";
 import shareRoute from "./router/shareRoute.js"
+import adminRoute from "./router/adminRoute.js";
 
 import { initBlockchain } from "./services/blockchain.js";
 
@@ -29,6 +30,7 @@ app.use("/api/files", shareRoute);
 app.use(express.static("public"));
 
 app.use("/api", authRoute);
+app.use("/api/admin", adminRoute);
 
 app.listen(5550, () => {
   console.log("Server is started at port", 5550);

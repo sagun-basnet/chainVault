@@ -19,6 +19,15 @@ import ProfilePage from "./components/user/pages/ProfilePage";
 import AddFiles from "./components/user/components/AddFiles";
 import ShareFileViewer from "./components/user/components/ShareFileViewer";
 import ShareFileLink from "./components/user/components/ShareFIleLink";
+import BlockchainLog from "./components/admin/BlockchainLog";
+import Main from "./components/dashboard/layout/Main";
+import FileManagement from "./components/admin/FileManagement";
+import UserManagement from "./components/admin/UserManagement";
+import AIManagement from "./components/admin/AIManagement";
+import Analytics from "./components/admin/Analytics";
+import SystemLogs from "./components/admin/SystemLogs";
+import Settings from "./components/admin/Settings";
+import UserBlockchainLog from "./components/user/pages/UserBlockchainLog";
 
 function App() {
   const router = createBrowserRouter([
@@ -36,6 +45,40 @@ function App() {
         {
           path: "/dashboard",
           element: <ChainVaultDashboard />,
+          children: [
+            {
+              path: "",
+              element: <Main />,
+            },
+            {
+              path: "files",
+              element: <FileManagement />,
+            },
+            {
+              path: "users",
+              element: <UserManagement />,
+            },
+            {
+              path: "ai",
+              element: <AIManagement />,
+            },
+            {
+              path: "blockchain-log",
+              element: <BlockchainLog />,
+            },
+            {
+              path: "analytics",
+              element: <Analytics />,
+            },
+            {
+              path: "logs",
+              element: <SystemLogs />,
+            },
+            {
+              path: "settings",
+              element: <Settings />,
+            },
+          ],
         },
       ],
     },
@@ -82,6 +125,10 @@ function App() {
             {
               path: "/user-dashboard/user-profile",
               element: <ProfilePage />,
+            },
+            {
+              path: "/user-dashboard/blockchain-log",
+              element: <UserBlockchainLog />,
             },
           ],
         },

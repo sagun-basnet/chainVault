@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useOutletContext } from "react-router-dom";
 import {
   FileText,
   HardDrive,
   Brain,
   Database,
   CheckCircle2,
-  Clock,
-  XCircle,
   Plus,
   Filter,
   Grid,
@@ -17,12 +16,15 @@ import {
   PieChart,
 } from "lucide-react";
 
-const Main = ({ activeTab, viewMode, setViewMode, isVisible, searchQuery }) => {
+const Main = () => {
+  const { activeTab, viewMode, setViewMode, isVisible, searchQuery } = useOutletContext();
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [blockchainLogs, setBlockchainLogs] = useState([]);
 
   useEffect(() => {
     fetchFiles();
+    fetchLogs();
   }, []);
 
   const fetchFiles = async () => {
@@ -33,6 +35,15 @@ const Main = ({ activeTab, viewMode, setViewMode, isVisible, searchQuery }) => {
     } catch (error) {
       console.error("Error fetching files:", error);
       setLoading(false);
+    }
+  };
+
+  const fetchLogs = async () => {
+    try {
+      const res = await axios.get("http://localhost:5550/api/files/blockchain/logs");
+      setBlockchainLogs(res.data);
+    } catch (error) {
+      console.error("Error fetching blockchain logs:", error);
     }
   };
 
@@ -69,35 +80,14 @@ const Main = ({ activeTab, viewMode, setViewMode, isVisible, searchQuery }) => {
     },
     {
       label: "Blockchain Logs",
-      value: "5,432", // Mock data for now
+      value: blockchainLogs.length.toString(),
       change: "+18%",
       icon: <Database className="w-6 h-6" />,
       color: "from-orange-500 to-red-500",
     },
   ];
 
-  // Mock blockchain logs for now
-  const blockchainLogs = [
-    {
-      id: 1,
-      action: "File Upload",
-      file: "Project_Proposal_v3.pdf",
-      timestamp: "2025-06-25 14:32:15",
-      hash: "0x7d4a8b9c...",
-      status: "confirmed",
-    },
-    {
-      id: 2,
-      action: "Classification",
-      file: "Marketing_Assets.zip",
-      timestamp: "2025-06-25 14:28:42",
-      hash: "0x3f2e1a5b...",
-      status: "confirmed",
-    },
-  ];
-
   const getFileIcon = (type) => {
-    // Simple mapping based on extension or mime type
     if (!type) return <FileText className="w-6 h-6 text-gray-400" />;
     if (type.includes("pdf")) return <FileText className="w-6 h-6 text-red-500" />;
     if (type.includes("sheet") || type.includes("csv")) return <FileText className="w-6 h-6 text-green-500" />;
@@ -106,7 +96,6 @@ const Main = ({ activeTab, viewMode, setViewMode, isVisible, searchQuery }) => {
   };
 
   const getStatusBadge = (status) => {
-    // Assuming all files fetched are 'verified' or 'processed' for now
     return (
       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30">
         <CheckCircle2 className="w-3 h-3 mr-1" />
@@ -229,12 +218,12 @@ const Main = ({ activeTab, viewMode, setViewMode, isVisible, searchQuery }) => {
                           {log.action}
                         </h3>
                         <div className="flex items-center space-x-2 text-sm text-gray-400">
-                          <span>{log.file}</span>
+                          <span>{log.file?.name || "Unknown File"}</span>
                           <span>•</span>
-                          <span>{log.timestamp}</span>
+                          <span>{new Date(log.timestamp).toLocaleString()}</span>
                           <span>•</span>
-                          <span className="font-mono text-cyan-500">
-                            {log.hash}
+                          <span className="font-mono text-cyan-500" title={log.txHash}>
+                            {log.txHash ? `${log.txHash.substring(0, 10)}...` : "Pending"}
                           </span>
                         </div>
                       </div>
@@ -244,6 +233,9 @@ const Main = ({ activeTab, viewMode, setViewMode, isVisible, searchQuery }) => {
                       </span>
                     </div>
                   ))}
+                  {blockchainLogs.length === 0 && (
+                      <p className="text-gray-500">No blockchain logs found.</p>
+                  )}
                 </div>
               </div>
             </div>

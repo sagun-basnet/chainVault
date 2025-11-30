@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
-import Main from "./Main";
 
 const ChainVaultDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [viewMode, setViewMode] = useState("grid");
   const [isVisible, setIsVisible] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState([]);
   const [notifications, setNotifications] = useState(3);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -35,13 +34,14 @@ const ChainVaultDashboard = () => {
         <Topbar activeTab={activeTab} notifications={notifications} onSearch={setSearchQuery} />
 
         {/* Main Content Area */}
-        <Main 
-          activeTab={activeTab} 
-          viewMode={viewMode} 
-          setViewMode={setViewMode}
-          isVisible={isVisible}
-          searchQuery={searchQuery}
-        />
+        <Outlet context={{ 
+          activeTab, 
+          viewMode, 
+          setViewMode, 
+          isVisible, 
+          searchQuery,
+          notifications 
+        }} />
       </div>
     </div>
   );

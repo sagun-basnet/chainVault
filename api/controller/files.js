@@ -249,3 +249,25 @@ export const createBlockchainLog = async (data) => {
     console.error("Error creating DB blockchain log:", error);
   }
 };
+
+// Get Blockchain Logs
+export const getBlockchainLogs = async (req, res) => {
+  try {
+    const { userId } = req.query;
+    const where = userId ? { userId: Number(userId) } : {};
+
+    const logs = await prisma.blockchainlog.findMany({
+      where,
+      orderBy: { timestamp: "desc" },
+      take: 50, // Limit to last 50 logs
+      include: {
+        file: { select: { name: true } },
+        user: { select: { name: true } },
+      },
+    });
+    res.status(200).json(logs);
+  } catch (error) {
+    console.error("Get blockchain logs error:", error);
+    res.status(500).json({ message: "Server error." });
+  }
+};

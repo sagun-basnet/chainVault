@@ -10,6 +10,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 from collections import Counter
 from keybert import KeyBERT
+import json
+
 kw_model = KeyBERT()
 import re
 
@@ -18,6 +20,19 @@ os.makedirs("temp", exist_ok=True)
 
 app = FastAPI()
 model = joblib.load("models/classifier.pkl")
+
+# File Index Management
+INDEX_FILE = "file_index.json"
+
+def load_index():
+    if os.path.exists(INDEX_FILE):
+        with open(INDEX_FILE, "r") as f:
+            return json.load(f)
+    return {}
+
+def save_index(index):
+    with open(INDEX_FILE, "w") as f:
+        json.dump(index, f)
 
 def generate_tags(text):
     if not text.strip() or text.strip() == "[[IMAGE_NO_TEXT]]":
@@ -67,7 +82,7 @@ async def upload_file(file: UploadFile = File(...)):
             return {"error": "Empty or unreadable content"}
         else:
             prediction = model.predict([text])[0]
-            tags = extract_tags_from_text(text)
+            tags = generate_tags(text)
 
         return {
             "filename": file.filename,
@@ -83,6 +98,7 @@ async def upload_file(file: UploadFile = File(...)):
 async def upload_multiple_files(files: List[UploadFile] = File(description="Multiple files", default=[])):
     """Upload and classify multiple files of different types."""
     results = []
+    file_index = load_index()
 
     for file in files:
         temp_path = f"temp/{file.filename}"
@@ -106,6 +122,9 @@ async def upload_multiple_files(files: List[UploadFile] = File(description="Mult
             else:
                 prediction = model.predict([text])[0]
                 tags = generate_tags(text)
+                
+                # Index the file content
+                file_index[file.filename] = text
 
             results.append({
                 "filename": file.filename,
@@ -118,7 +137,8 @@ async def upload_multiple_files(files: List[UploadFile] = File(description="Mult
                 "filename": file.filename,
                 "error": str(e)
             })
-
+            
+    save_index(file_index)
     return {"results": results}
 
 
@@ -137,3 +157,39 @@ def search(query: str):
         "category": labels[top_idx],
         "score": float(similarities[top_idx])
     }
+
+@app.get("/search-files/")
+def search_files(query: str):
+    """Semantic search across uploaded files."""
+    file_index = load_index()
+    if not file_index:
+        return {"results": []}
+
+    filenames = list(file_index.keys())
+    texts = list(file_index.values())
+
+    if not texts:
+        return {"results": []}
+
+    vectorizer = TfidfVectorizer()
+    try:
+        tfidf_matrix = vectorizer.fit_transform(texts)
+        query_vector = vectorizer.transform([query])
+        similarities = cosine_similarity(query_vector, tfidf_matrix).flatten()
+
+        # Get top 5 results
+        top_indices = similarities.argsort()[-5:][::-1]
+        
+        results = []
+        for idx in top_indices:
+            if similarities[idx] > 0.1: # Threshold
+                results.append({
+                    "filename": filenames[idx],
+                    "score": float(similarities[idx]),
+                    "preview": texts[idx][:200] + "..."
+                })
+        
+        return {"results": results}
+    except ValueError:
+        # Handle case where texts might be empty or vectorizer fails
+        return {"results": []}

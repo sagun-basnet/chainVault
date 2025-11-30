@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import {
   FileText,
   HardDrive,
@@ -16,86 +17,66 @@ import {
   PieChart,
 } from "lucide-react";
 
-const Main = ({ activeTab, viewMode, setViewMode, isVisible }) => {
+const Main = ({ activeTab, viewMode, setViewMode, isVisible, searchQuery }) => {
+  const [files, setFiles] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchFiles();
+  }, []);
+
+  const fetchFiles = async () => {
+    try {
+      const res = await axios.get("http://localhost:5550/api/files");
+      setFiles(res.data);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching files:", error);
+      setLoading(false);
+    }
+  };
+
+  const filteredFiles = files.filter((file) => {
+    const query = (searchQuery || "").toLowerCase();
+    return (
+      file.name.toLowerCase().includes(query) ||
+      (file.category && file.category.toLowerCase().includes(query)) ||
+      (file.tags && file.tags.some((t) => t.tag.name.toLowerCase().includes(query)))
+    );
+  });
+
   const stats = [
     {
       label: "Total Files",
-      value: "1,247",
+      value: files.length.toString(),
       change: "+12%",
       icon: <FileText className="w-6 h-6" />,
       color: "from-cyan-500 to-blue-500",
     },
     {
       label: "Storage Used",
-      value: "847 GB",
+      value: "847 GB", // Mock data for now
       change: "+5%",
       icon: <HardDrive className="w-6 h-6" />,
       color: "from-green-500 to-emerald-500",
     },
     {
       label: "AI Classifications",
-      value: "2,156",
+      value: files.filter(f => f.category && f.category !== 'unknown').length.toString(),
       change: "+23%",
       icon: <Brain className="w-6 h-6" />,
       color: "from-purple-500 to-pink-500",
     },
     {
       label: "Blockchain Logs",
-      value: "5,432",
+      value: "5,432", // Mock data for now
       change: "+18%",
       icon: <Database className="w-6 h-6" />,
       color: "from-orange-500 to-red-500",
     },
   ];
 
-  const recentFiles = [
-    {
-      id: 1,
-      name: "Project_Proposal_v3.pdf",
-      type: "PDF",
-      size: "2.4 MB",
-      modified: "2 hours ago",
-      status: "verified",
-      classification: "Business Document",
-    },
-    {
-      id: 2,
-      name: "Marketing_Assets.zip",
-      type: "Archive",
-      size: "45.2 MB",
-      modified: "5 hours ago",
-      status: "processing",
-      classification: "Media Files",
-    },
-    {
-      id: 3,
-      name: "Financial_Report_Q4.xlsx",
-      type: "Spreadsheet",
-      size: "1.8 MB",
-      modified: "1 day ago",
-      status: "verified",
-      classification: "Financial Data",
-    },
-    {
-      id: 4,
-      name: "Team_Meeting_Notes.docx",
-      type: "Document",
-      size: "856 KB",
-      modified: "2 days ago",
-      status: "verified",
-      classification: "Meeting Notes",
-    },
-    {
-      id: 5,
-      name: "Code_Review_Comments.txt",
-      type: "Text",
-      size: "12 KB",
-      modified: "3 days ago",
-      status: "verified",
-      classification: "Development",
-    },
-  ];
-
+  // Mock blockchain logs for now
   const blockchainLogs = [
     {
       id: 1,
@@ -113,59 +94,25 @@ const Main = ({ activeTab, viewMode, setViewMode, isVisible }) => {
       hash: "0x3f2e1a5b...",
       status: "confirmed",
     },
-    {
-      id: 3,
-      action: "Shared Access",
-      file: "Financial_Report_Q4.xlsx",
-      timestamp: "2025-06-25 13:45:18",
-      hash: "0x9b7c2d8e...",
-      status: "confirmed",
-    },
   ];
 
   const getFileIcon = (type) => {
-    switch (type) {
-      case "PDF":
-        return <FileText className="w-6 h-6 text-red-500" />;
-      case "Archive":
-        return <FileText className="w-6 h-6 text-yellow-500" />;
-      case "Spreadsheet":
-        return <FileText className="w-6 h-6 text-green-500" />;
-      case "Document":
-        return <FileText className="w-6 h-6 text-blue-500" />;
-      case "Text":
-        return <FileText className="w-6 h-6 text-gray-400" />;
-      default:
-        return <FileText className="w-6 h-6 text-gray-400" />;
-    }
+    // Simple mapping based on extension or mime type
+    if (!type) return <FileText className="w-6 h-6 text-gray-400" />;
+    if (type.includes("pdf")) return <FileText className="w-6 h-6 text-red-500" />;
+    if (type.includes("sheet") || type.includes("csv")) return <FileText className="w-6 h-6 text-green-500" />;
+    if (type.includes("image")) return <FileText className="w-6 h-6 text-purple-500" />;
+    return <FileText className="w-6 h-6 text-blue-500" />;
   };
 
   const getStatusBadge = (status) => {
-    switch (status) {
-      case "verified":
-        return (
-          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30">
-            <CheckCircle2 className="w-3 h-3 mr-1" />
-            Verified
-          </span>
-        );
-      case "processing":
-        return (
-          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
-            <Clock className="w-3 h-3 mr-1" />
-            Processing
-          </span>
-        );
-      case "error":
-        return (
-          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-400 border border-red-500/30">
-            <XCircle className="w-3 h-3 mr-1" />
-            Error
-          </span>
-        );
-      default:
-        return null;
-    }
+    // Assuming all files fetched are 'verified' or 'processed' for now
+    return (
+      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30">
+        <CheckCircle2 className="w-3 h-3 mr-1" />
+        Verified
+      </span>
+    );
   };
 
   const FloatingElement = ({ children, delay = 0, className = "" }) => (
@@ -223,7 +170,9 @@ const Main = ({ activeTab, viewMode, setViewMode, isVisible }) => {
               </div>
               <div className="p-6">
                 <div className="space-y-4">
-                  {recentFiles.slice(0, 5).map((file) => (
+                  {loading ? (
+                    <p className="text-gray-400">Loading files...</p>
+                  ) : filteredFiles.slice(0, 5).map((file) => (
                     <div
                       key={file.id}
                       className="flex items-center space-x-4 p-4 rounded-lg hover:bg-gray-800/50 transition-colors"
@@ -236,16 +185,19 @@ const Main = ({ activeTab, viewMode, setViewMode, isVisible }) => {
                         <div className="flex items-center space-x-2 text-sm text-gray-400">
                           <span>{file.size}</span>
                           <span>•</span>
-                          <span>{file.modified}</span>
+                          <span>{new Date(file.createdAt || Date.now()).toLocaleDateString()}</span>
                           <span>•</span>
                           <span className="text-cyan-500">
-                            {file.classification}
+                            {file.category || "Unclassified"}
                           </span>
                         </div>
                       </div>
-                      {getStatusBadge(file.status)}
+                      {getStatusBadge("verified")}
                     </div>
                   ))}
+                  {!loading && filteredFiles.length === 0 && (
+                    <p className="text-gray-500">No files found.</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -343,9 +295,11 @@ const Main = ({ activeTab, viewMode, setViewMode, isVisible }) => {
           <FloatingElement delay={400}>
             <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-xl rounded-2xl border border-gray-800">
               <div className="p-6">
-                {viewMode === "grid" ? (
+                {loading ? (
+                   <p className="text-gray-400">Loading files...</p>
+                ) : viewMode === "grid" ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {recentFiles.map((file) => (
+                    {filteredFiles.map((file) => (
                       <div
                         key={file.id}
                         className="group bg-gray-800/50 hover:bg-gray-800 rounded-xl p-4 border border-gray-700 hover:border-cyan-500/50 transition-all cursor-pointer"
@@ -361,20 +315,20 @@ const Main = ({ activeTab, viewMode, setViewMode, isVisible }) => {
                         </h3>
                         <div className="text-sm text-gray-400 mb-2">
                           <div>{file.size}</div>
-                          <div>{file.modified}</div>
+                          <div>{new Date(file.createdAt || Date.now()).toLocaleDateString()}</div>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-cyan-500">
-                            {file.classification}
+                            {file.category || "Unclassified"}
                           </span>
-                          {getStatusBadge(file.status)}
+                          {getStatusBadge("verified")}
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {recentFiles.map((file) => (
+                    {filteredFiles.map((file) => (
                       <div
                         key={file.id}
                         className="flex items-center space-x-4 p-4 rounded-lg hover:bg-gray-800/50 transition-colors"
@@ -391,14 +345,14 @@ const Main = ({ activeTab, viewMode, setViewMode, isVisible }) => {
                           <div className="flex items-center space-x-2 text-sm text-gray-400">
                             <span>{file.size}</span>
                             <span>•</span>
-                            <span>{file.modified}</span>
+                            <span>{new Date(file.createdAt || Date.now()).toLocaleDateString()}</span>
                             <span>•</span>
                             <span className="text-cyan-500">
-                              {file.classification}
+                              {file.category || "Unclassified"}
                             </span>
                           </div>
                         </div>
-                        {getStatusBadge(file.status)}
+                        {getStatusBadge("verified")}
                         <button className="text-gray-400 hover:text-gray-300">
                           <MoreHorizontal className="w-5 h-5" />
                         </button>

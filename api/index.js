@@ -4,7 +4,12 @@ import authRoute from "./router/authRoute.js";
 import fileRoute from "./router/fileRoute.js";
 import shareRoute from "./router/shareRoute.js"
 
+import { initBlockchain } from "./services/blockchain.js";
+
 const app = express();
+
+// Initialize Blockchain Service
+initBlockchain();
 
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Credentials", true);

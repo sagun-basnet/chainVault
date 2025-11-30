@@ -56,14 +56,20 @@ const MyFilesPage = () => {
   const [linkGenerated, setLinkGenerated] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
 
-  const fetchData = async () => {
-    await get(`/api/files/user-id/${parseInt(currentUser?.id)}`)
+  const fetchData = async (query = "") => {
+    let url = `/api/files/user-id/${parseInt(currentUser?.id)}`;
+    
+    if (query) {
+      url = `/api/files/search/semantic?query=${query}&userId=${parseInt(currentUser?.id)}`;
+    }
+
+    await get(url)
       .then((res) => {
         const formatted = res.map((file) => ({
           id: file.id,
           name: file.name,
           path: file.path,
-          size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
+          size: file.size ? (file.size / (1024 * 1024)).toFixed(2) + " MB" : "N/A",
           sizeInBytes: file.size,
           type: file.type,
           category: file.category,
@@ -77,6 +83,7 @@ const MyFilesPage = () => {
               }
             : null,
           tags: file.tags?.map((t) => t.tag?.name) || [],
+          preview: file.preview, // Add preview from AI
         }));
         setFiles(formatted);
       })
@@ -109,12 +116,13 @@ const MyFilesPage = () => {
   const categories = ["all", ...new Set(files.map((f) => f.category))];
 
   const filteredFiles = files.filter((file) => {
-    const matchesSearch = file.name
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
+    // Search is handled by backend now, so we only filter by category locally if needed
+    // But if searchTerm is empty, we might want to rely on local filtering?
+    // For now, let's assume backend returns relevant files.
+    // We still keep category filter.
     const matchesCategory =
       selectedCategory === "all" || file.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    return matchesCategory;
   });
 
   const sortedFiles = [...filteredFiles].sort((a, b) => {
@@ -492,12 +500,16 @@ const MyFilesPage = () => {
         <div className="bg-gradient-to-br from-gray-900/40 to-gray-800/40 backdrop-blur-xl rounded-2xl p-4 border border-gray-800">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search 
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 cursor-pointer hover:text-cyan-500" 
+                onClick={() => fetchData(searchTerm)}
+              />
               <input
                 type="text"
-                placeholder="Search files..."
+                placeholder="Semantic Search (e.g., 'financial report')..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && fetchData(searchTerm)}
                 className="w-full bg-gray-800/50 text-white pl-10 pr-4 py-2 rounded-lg border border-gray-700 focus:border-cyan-500 focus:outline-none transition-all"
               />
             </div>
@@ -578,6 +590,11 @@ const MyFilesPage = () => {
                     <span>{file.size}</span>
                     <span className="text-xs">{file.createdAt}</span>
                   </div>
+                  {file.preview && (
+                    <div className="text-xs text-gray-500 mb-3 italic line-clamp-2">
+                       "{file.preview}"
+                    </div>
+                  )}
                   <div className="flex flex-wrap gap-1 mb-4">
                     {file.tags.map(
                       (tag, index) =>

@@ -27,7 +27,7 @@ export const createShareLink = async (req, res) => {
 
     const expiresAt = getFutureDate(Number(expiresInDays));
 
-    const sharedLink = await prisma.sharedLink.create({
+    const sharedlink = await prisma.sharedlink.create({
       data: {
         fileId: Number(fileId),
         userId: Number(userId),
@@ -52,7 +52,7 @@ export const accessSharedFile = async (req, res) => {
     const { token } = req.params;
     const password = req.query.password; // optional password input
 
-    const link = await prisma.sharedLink.findUnique({
+    const link = await prisma.sharedlink.findUnique({
       where: { token },
       include: { file: true, user: true },
     });
@@ -79,7 +79,7 @@ export const accessSharedFile = async (req, res) => {
 export const getSharedFileList = async (req, res) => {
   const { userId } = req.params;
   try {
-    const files = await prisma.sharedLink.findMany({
+    const files = await prisma.sharedlink.findMany({
       where: userId ? { userId: Number(userId) } : {},
       include: {
         file: true,
@@ -95,7 +95,7 @@ export const getSharedFileList = async (req, res) => {
 export const deleteSharedFileLink = async (req, res) => {
   const { id } = req.params;
   try {
-    await prisma.sharedLink.delete({
+    await prisma.sharedlink.delete({
       where: { id: Number(id) },
     });
     res.status(200).json({ message: "Link deleted successfully" });

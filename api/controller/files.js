@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import path from "path";
 import fs from "fs";
+import axios from "axios";
 
 const prisma = new PrismaClient();
 
@@ -165,5 +166,86 @@ export const downloadFileById = async (req, res) => {
   } catch (error) {
     console.error("Download error:", error);
     res.status(500).json({ message: "Error downloading file" });
+  }
+};
+
+// Semantic Search
+export const searchFiles = async (req, res) => {
+  const { query, userId } = req.query;
+
+  if (!query) {
+    return res.status(400).json({ message: "Query is required." });
+  }
+
+  try {
+    // 1. Call AI Service to get matching filenames
+    const aiResponse = await axios.get(`http://localhost:8000/search-files/`, {
+      params: { query },
+    });
+
+    const aiResults = aiResponse.data.results; // [{ filename, score, preview }]
+
+    if (!aiResults || aiResults.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    // 2. Extract filenames
+    const filenames = aiResults.map((r) => r.filename);
+
+    // 3. Find files in DB that match these filenames (stored in path)
+    // path is like "/uploads/filename-timestamp.ext"
+    // We need to find files where path contains the filename
+    
+    // Since we store path as `/uploads/${filename}`, we can search by path endsWith filename
+    // OR just use 'in' operator if we construct the paths.
+    
+    const filePaths = filenames.map(name => `/uploads/${name}`);
+
+    const files = await prisma.file.findMany({
+      where: {
+        path: { in: filePaths },
+        userId: userId ? parseInt(userId) : undefined, // Optional: restrict to user
+      },
+      include: { tags: { include: { tag: true } }, user: true },
+    });
+
+    // 4. Merge AI results (score/preview) with DB files
+    const mergedResults = files.map(file => {
+      const filename = file.path.split('/').pop();
+      const aiMatch = aiResults.find(r => r.filename === filename);
+      return {
+        ...file,
+        relevanceScore: aiMatch ? aiMatch.score : 0,
+        preview: aiMatch ? aiMatch.preview : "",
+      };
+    });
+
+    // Sort by relevance
+    mergedResults.sort((a, b) => b.relevanceScore - a.relevanceScore);
+
+    res.status(200).json(mergedResults);
+
+  } catch (error) {
+    console.error("Search error:", error);
+    res.status(500).json({ message: "Server error during search." });
+  }
+};
+
+// Create Blockchain Log in DB
+export const createBlockchainLog = async (data) => {
+  try {
+    const { fileId, userId, action, hash, txHash } = data;
+    await prisma.blockchainlog.create({
+      data: {
+        fileId: Number(fileId),
+        userId: Number(userId),
+        action,
+        hash,
+        txHash,
+      },
+    });
+    console.log(`DB Log created for file ${fileId}`);
+  } catch (error) {
+    console.error("Error creating DB blockchain log:", error);
   }
 };

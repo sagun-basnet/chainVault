@@ -11,7 +11,11 @@ import {
   deleteFile,
   getFileByUserId,
   downloadFileById,
+  searchFiles,
+  createBlockchainLog,
 } from "../controller/files.js";
+import crypto from "crypto";
+import { logFileAction } from "../services/blockchain.js";
 
 const router = express.Router();
 
@@ -32,7 +36,8 @@ router.post("/upload-multiple", upload.array("files", 10), async (req, res) => {
     for (const file of req.files) {
       // Send file to AI FastAPI for classification
       const form = new FormData();
-      form.append("files", fs.createReadStream(file.path), file.originalname);
+      // Use file.filename (unique) so AI service indexes it correctly
+      form.append("files", fs.createReadStream(file.path), file.filename);
 
       const response = await axios.post(
         "http://localhost:8000/upload-multiple/", // your FastAPI URL
@@ -48,7 +53,7 @@ router.post("/upload-multiple", upload.array("files", 10), async (req, res) => {
 
       // Assume response.data.results is an array of classification results for each file
       const aiResult = response.data.results.find(
-        (r) => r.filename === file.originalname
+        (r) => r.filename === file.filename
       );
 
       // Prepare full file data for DB, using AI category if available
@@ -85,6 +90,37 @@ router.post("/upload-multiple", upload.array("files", 10), async (req, res) => {
         };
         createFile(mockReq, mockRes);
       });
+
+      // Blockchain Logging
+      try {
+          const fileBuffer = fs.readFileSync(file.path);
+          const hashSum = crypto.createHash('sha256');
+          hashSum.update(fileBuffer);
+          const fileHash = hashSum.digest('hex');
+          
+          const txHash = await logFileAction(fileHash, "UPLOAD", userId.toString(), file.originalname);
+          
+          if (txHash) {
+            console.log(`Logged upload for ${file.originalname} to blockchain. Tx: ${txHash}`);
+            
+            // Save to DB
+            const savedFileId = results[results.length - 1]?.dbResponse?.file?.id;
+            if (savedFileId) {
+                await createBlockchainLog({
+                    fileId: savedFileId,
+                    userId: userId,
+                    action: "UPLOAD",
+                    hash: fileHash,
+                    txHash: txHash
+                });
+            }
+          } else {
+            console.warn(`Failed to log upload for ${file.originalname} to blockchain.`);
+          }
+      } catch (bcError) {
+          console.error("Blockchain logging failed:", bcError);
+          // Don't fail the request if blockchain logging fails, just log the error
+      }
     }
 
     res.status(201).json({
@@ -105,6 +141,7 @@ router.get("/:id", getFileById);
 router.get("/user-id/:id", getFileByUserId);
 router.put("/:id", updateFile);
 router.delete("/:id", deleteFile);
+router.get("/search/semantic", searchFiles);
 router.get("/download/:id/:uid", downloadFileById);
 
 export default router;

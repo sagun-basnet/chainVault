@@ -9,6 +9,7 @@ const ChainVaultDashboard = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [notifications, setNotifications] = useState(3);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     setIsVisible(true);
@@ -31,7 +32,7 @@ const ChainVaultDashboard = () => {
       {/* Main Content */}
       <div className="ml-64 flex flex-col h-screen">
         {/* Topbar */}
-        <Topbar activeTab={activeTab} notifications={notifications} />
+        <Topbar activeTab={activeTab} notifications={notifications} onSearch={setSearchQuery} />
 
         {/* Main Content Area */}
         <Main 
@@ -39,6 +40,7 @@ const ChainVaultDashboard = () => {
           viewMode={viewMode} 
           setViewMode={setViewMode}
           isVisible={isVisible}
+          searchQuery={searchQuery}
         />
       </div>
     </div>
